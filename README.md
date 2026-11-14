@@ -1,19 +1,22 @@
 # BetterMarkdown
 
-A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown rendering with full GitHub Flavored Markdown (GFM) support, Mermaid diagrams, and KaTeX math formulas.
+A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown rendering with full GitHub Flavored Markdown (GFM) support, Mermaid diagrams, KaTeX math formulas, and a few extras (`-#` subtext, color swatches, native-looking code blocks with a copy button).
 
 ## Features
 
 | Feature | Syntax | Description |
 |---|---|---|
-| **GFM Tables** | `\| h1 \| h2 \|` | Full table rendering with alignment + headerless continuation |
+| **GFM Tables** | `\| h1 \| h2 \|` | Full table rendering with alignment. Tables split across several messages get their header back from the previous messages |
 | **Task Lists** | `- [x] Done` | Read-only checkboxes for todo items |
-| **Headings** | `# H1` – `###### H6` | Proper visual hierarchy (Discord renders all as bold) |
+| **Headings** | `# H1` – `###### H6` | Proper visual hierarchy (Discord renders all as bold). Also work inside nested blockquotes |
 | **Horizontal Rules** | `---`, `***`, `___` | Styled divider lines |
 | **Footnotes** | `[^1]` + `[^1]: text` | Superscript references with click-to-scroll definitions |
-| **Nested Blockquotes** | `> > > text` | Depth-colored borders (blurple → green → yellow → red) |
+| **Nested Blockquotes** | `> > > text` | Depth-colored borders (blurple → green → yellow → red). Headings, `-#` subtext and code blocks work inside them |
 | **Mermaid Diagrams** | `` ```mermaid `` | Flowcharts, sequence diagrams, etc. via CDN |
 | **KaTeX Math** | `$E=mc^2$`, `$$...$$` | LaTeX math rendering via CDN |
+| **Subtext** | `-# small text` | Discord's small, muted text — also inside nested blockquotes and enhanced messages |
+| **Code blocks** | `` ```bash `` | Rendered by Discord's own renderer (highlighting, same look) with a working copy button in the top-right corner |
+| **Color swatches** | `#F7F6F3` | A small filled square next to every hex color (`#RGB`, `#RRGGBB`, `#RRGGBBAA`) |
 
 ## Screenshots
 
@@ -25,14 +28,17 @@ A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown re
 
 ## How It Works
 
-BetterMarkdown uses Vencord's `renderMessageAccessory` API to add enhanced rendering below each message, then hides the original content via DOM manipulation:
+BetterMarkdown uses Vencord's `renderMessageAccessory` API to render enhanced content as a message accessory, and hides the original text with CSS:
 
-1. Checks raw message text for GFM/enhanced patterns (fast regex gate)
+1. Checks raw message text for GFM/enhanced patterns (fast regex gate). Code blocks are ignored by the gate, so a `# comment` or a `|` inside a ```` ```bash ```` block never triggers anything
 2. If patterns found → parses into typed blocks, renders with React components
-3. Walks up the DOM to find and hide the original `[id^='message-content-']` element
-4. If no patterns → does nothing (**zero overhead**)
+3. Renders a per-message `<style>` rule next to the content: `#message-content-<id> { display: none }`. It is scoped by id on purpose: a generic "hide any `message-content-*` inside a message with enhanced content" rule also hid the text of messages that merely *contain* another rendered message (e.g. the MessageLinkEmbeds plugin)
+4. Moves the enhanced block to the top of the accessories container (`order: -1`), so attachments, embeds and stickers stay *below* the text, like in the original message
+5. If no patterns → does nothing (**zero overhead**)
 
-**Code block auto-unwrapping:** Plain `` ``` `` blocks (no language tag) containing GFM patterns are automatically unwrapped and rendered. Language-tagged blocks (`` ```python ``, etc.) remain as code.
+**Code blocks:** every ```` ``` ```` block is handed to Discord's own markdown renderer, so it looks and highlights exactly like a native one. The native copy button doesn't work outside Discord's message renderer, so it is hidden and replaced by a working one (copies only the code, without the fences). Blocks inside nested blockquotes and blocks with text before the fence on the same line (`text: ```bash`) are supported too. The only exceptions: ```` ```mermaid ```` blocks become diagrams, and **plain** ```` ``` ```` blocks (no language tag) that contain a **table** are unwrapped and rendered as a table.
+
+**Tables split across messages:** a message that starts with table rows but has no header of its own is treated as a continuation. The plugin looks at the previous messages by the same author (up to 20), finds the last table header + separator, and puts it in front, so the continuation renders as a normal table (with the original column names and alignment) instead of a headerless one.
 
 Discord's existing markdown (bold, italic, code, spoilers, mentions, emoji) is fully preserved — inline formatting within enhanced blocks uses Discord's own `simple-markdown` parser.
 
@@ -58,7 +64,9 @@ src/userplugins/
     │   ├── footnote.ts
     │   ├── blockquote.ts
     │   ├── math.ts        # LaTeX $...$ and $$...$$ extraction
-    │   └── mermaid.ts     # ```mermaid block extraction
+    │   ├── mermaid.ts     # ```mermaid block extraction
+    │   ├── colors.ts      # Hex color detection
+    │   └── tableContinuation.ts  # Header lookup for tables split across messages
     └── components/        # React components
         ├── Table.tsx
         ├── TaskList.tsx
@@ -68,6 +76,8 @@ src/userplugins/
         ├── Blockquote.tsx
         ├── Math.tsx       # KaTeX inline + block rendering
         ├── Mermaid.tsx    # Mermaid diagram rendering
+        ├── CodeBlock.tsx  # Code blocks via Discord's parser + copy button
+        ├── ColorSwatch.tsx  # Color square next to hex colors
         └── shared.tsx     # renderInline() via Discord's parser
 ```
 
@@ -96,6 +106,7 @@ All features can be individually toggled in **Vencord Settings → Plugins → B
 - **Enable Nested Blockquotes** — Visual depth for `> >` (default: on)
 - **Enable Math** — KaTeX formula rendering (default: on)
 - **Enable Mermaid** — Diagram rendering (default: on)
+- **Enable Color Swatches** — Color square next to hex colors (default: on)
 - **Theme** — Discord Dark (default), Discord Light, or GitHub
 
 ## Syntax Examples
@@ -111,12 +122,16 @@ All features can be individually toggled in **Vencord Settings → Plugins → B
 
 Alignment: `:---` left, `:---:` center, `---:` right.
 
-Headerless tables (continuation fragments from split messages) are also supported:
+Long tables get cut into several messages (Discord's 2000 character limit). Only the first message has the header, the next ones are just rows:
 
 ```
 | Alice | Dev | Active |
 | Bob | PM | Away |
 ```
+
+These continuations are rendered as normal tables: the header and alignment are recovered from the previous message(s) by the same author. If the header can't be found, they render as a headerless table.
+
+A table inside a plain ```` ``` ```` block is rendered as a table too.
 
 ### Task Lists
 
@@ -165,6 +180,30 @@ This claim needs a source[^1].
 > > > Even deeper
 ```
 
+### Subtext
+
+```
+-# Small muted text
+> > -# Also works inside nested blockquotes
+```
+
+### Headings and code inside nested blockquotes
+
+````
+> > # Heading inside a nested quote
+> > ```bash
+> > echo "code block inside a quote"
+> > ```
+````
+
+### Color swatches
+
+```
+Palette: #F7F6F3 background, #173F66 titles, #4A91C8 lines
+```
+
+Each hex color gets a small square filled with that color. Colors inside code blocks and links are left alone. 3-digit values need at least one letter (`#fff` yes, `#123` no) so issue numbers aren't treated as colors.
+
 ## Technical Notes
 
 ### Architecture
@@ -188,8 +227,9 @@ Message ──→ renderMessageAccessory(props)
                │   └── Text blocks via renderInline()
                │   │
                │   ▼
-               │ useEffect: hide original message content
-               │            via DOM querySelector
+               │ per-message <style>:
+               │   #message-content-<id> { display: none }
+               │ (+ order: -1 so attachments stay below the text)
                │
                ▼
          Enhanced Message (or nothing)
@@ -220,15 +260,17 @@ Class prefix: `bm-` (e.g. `bm-table`, `bm-heading-2`)
 ### Limitations
 
 - Enhanced rendering is client-side only — other users see raw markdown
-- Code blocks with language tags (`` ```python ``) are protected from parsing
+- Code blocks are left to Discord's renderer; only plain `` ``` `` blocks (no language) containing a table are unwrapped. A table inside `` ```md `` stays as code
 - Standard tables require the separator row (`|---|---|`)
-- If a long table is split across Discord messages (2000 char limit), the continuation fragment renders as a headerless table
+- Tables split across messages: the header is only found in previous messages by the same author (up to 20 back, and they must be loaded). Otherwise the fragment renders as a headerless table. A row cut in half between two messages isn't joined
+- Messages with hex colors are re-rendered by the plugin (like messages with tables), so some details may differ slightly from Discord's native rendering
+- The copy button replaces Discord's native one by hiding any element inside a code block whose class contains `copy` or `codeActions`; if Discord renames those classes, both buttons may show
 - Mermaid and KaTeX require internet access for CDN loading
 
 ### Graceful Degradation
 
 - If a parser fails, the original content is preserved (try/catch)
-- If the DOM hiding selector doesn't match, both original and enhanced content show
+- If the per-message hide rule doesn't match, both original and enhanced content show
 - If CDN loading fails, math/diagrams render as raw text
 
 ## License
