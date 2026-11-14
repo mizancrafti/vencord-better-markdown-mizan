@@ -11,6 +11,13 @@ import { Parser } from "@webpack/common";
 import { FootnoteRef } from "./Footnote";
 import { MathInline } from "./Math";
 import { decodeMathPlaceholder } from "../parser/math";
+import { swatchify } from "./ColorSwatch";
+
+// Color swatches next to hex colors (toggled from the plugin settings)
+let colorSwatchesEnabled = true;
+export function setColorSwatchesEnabled(enabled: boolean) {
+    colorSwatchesEnabled = enabled;
+}
 
 // Use Vencord's standard Parser from @webpack/common.
 // Fallback: locate Discord's markdown parser via webpack props.
@@ -84,7 +91,8 @@ function parseInline(text: string): React.ReactNode {
 
     try {
         if (MarkdownParser?.parse) {
-            return MarkdownParser.parse(text, true);
+            const parsed = MarkdownParser.parse(text, true);
+            return colorSwatchesEnabled ? swatchify(parsed) : parsed;
         }
     } catch {
         // Parser failed — fall back to plain text

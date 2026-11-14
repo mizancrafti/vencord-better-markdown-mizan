@@ -57,3 +57,14 @@ export function extractHeadings(lines: string[]): { start: number; end: number; 
 
     return headings;
 }
+
+/**
+ * Discord subtext: `-# small muted text`.
+ * Returns the inner text, or null if the line isn't subtext.
+ */
+const SUBTEXT_PATTERN = /^-#\s+(.+)$/;
+
+export function parseSubtext(line: string): string | null {
+    const match = line.trim().match(SUBTEXT_PATTERN);
+    return match ? match[1].trim() : null;
+}

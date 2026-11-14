@@ -26,3 +26,10 @@ export function Heading({ data }: { data: HeadingData }) {
         </Tag>
     );
 }
+
+/**
+ * Subtext (`-# text`): small, muted, block-level line.
+ */
+export function Subtext({ text }: { text: string }) {
+    return <small className="bm-subtext">{renderInline(text)}</small>;
+}

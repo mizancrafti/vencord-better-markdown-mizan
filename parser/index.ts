@@ -7,6 +7,7 @@
  */
 
 import { extractTables, detectTable, type TableData } from "./table";
+import { detectHexColor } from "./colors";
 import { extractTaskLists, detectTaskList, type TaskListData } from "./taskList";
 import { extractHeadings, detectHeading, type HeadingData } from "./heading";
 import { extractHrs, detectHr } from "./hr";
@@ -37,6 +38,7 @@ export interface FeatureFlags {
     enableNestedBlockquotes: boolean;
     enableMath: boolean;
     enableMermaid: boolean;
+    enableColorSwatches: boolean;
 }
 
 export type ParsedBlock =
@@ -48,7 +50,8 @@ export type ParsedBlock =
     | { type: "footnoteSection"; content: FootnoteData }
     | { type: "blockquote"; content: BlockquoteData }
     | { type: "mathBlock"; content: { latex: string } }
-    | { type: "mermaidBlock"; content: { code: string } };
+    | { type: "mermaidBlock"; content: { code: string } }
+    | { type: "codeBlock"; content: { raw: string } };
 
 interface LineRange {
     start: number;
@@ -60,60 +63,80 @@ interface LineRange {
  * This is the first gate — if false, we skip all parsing (zero overhead).
  */
 export function hasGfmPatterns(text: string, flags: FeatureFlags): boolean {
-    if (flags.enableTables && detectTable(text)) return true;
-    if (flags.enableTaskLists && detectTaskList(text)) return true;
-    if (flags.enableHeadings && detectHeading(text)) return true;
-    if (flags.enableHorizontalRules && detectHr(text)) return true;
-    if (flags.enableFootnotes && detectFootnotes(text)) return true;
-    if (flags.enableNestedBlockquotes && detectNestedBlockquote(text)) return true;
-    if (flags.enableMath && detectMath(text)) return true;
+    // Code blocks are left to Discord, so patterns inside them (a "# comment"
+    // in a bash block, a "|" in a diff...) must not trigger enhancement.
+    // Exception: plain ``` blocks that contain a table get unwrapped, so
+    // their content does count.
+    const lines = text.split("\n");
+    const protectedRanges = findCodeBlockRanges(lines, flags.enableTables);
+    const scan = lines
+        .map((line, i) => (isProtected(i, protectedRanges) ? "" : line))
+        .join("\n");
+
+    if (flags.enableTables && detectTable(scan)) return true;
+    if (flags.enableTaskLists && detectTaskList(scan)) return true;
+    if (flags.enableHeadings && detectHeading(scan)) return true;
+    if (flags.enableHorizontalRules && detectHr(scan)) return true;
+    if (flags.enableFootnotes && detectFootnotes(scan)) return true;
+    if (flags.enableNestedBlockquotes && detectNestedBlockquote(scan)) return true;
+    if (flags.enableMath && detectMath(scan)) return true;
     if (flags.enableMermaid && detectMermaid(text)) return true;
+    if (flags.enableColorSwatches && detectHexColor(scan)) return true;
     return false;
 }
 
 /**
  * Identify code block line ranges (``` ... ```) so we can skip them.
  *
- * Plain code blocks (no language tag, just ```) that contain GFM patterns
- * are NOT protected — their content gets unwrapped and parsed as markdown.
- * This handles the common case where bots/APIs wrap markdown in code blocks.
+ * Plain code blocks (no language tag, just ```) that contain a TABLE are NOT
+ * protected — their content gets unwrapped and parsed as markdown, so tables
+ * pasted inside ``` still render as tables.
  *
- * Code blocks WITH a language tag (```python, ```js, etc.) or ```mermaid
- * are always protected (mermaid is handled separately by its own parser).
+ * Every other code block (with or without language tag) is protected and
+ * later rendered by Discord's own code block renderer. ```mermaid blocks are
+ * handled separately by their own parser.
  */
-function findCodeBlockRanges(lines: string[]): LineRange[] {
+function findCodeBlockRanges(lines: string[], unwrapTables: boolean): LineRange[] {
     const ranges: LineRange[] = [];
     let inBlock = false;
     let blockStart = 0;
     let blockHasLang = false;
 
     for (let i = 0; i < lines.length; i++) {
+        // Count fences anywhere on the line (Discord also accepts "text ```js")
+        const fenceCount = (lines[i].match(/```/g) || []).length;
+        if (fenceCount === 0) continue;
         const trimmed = lines[i].trim();
-        if (trimmed.startsWith("```")) {
-            if (!inBlock) {
-                inBlock = true;
-                blockStart = i;
-                // Check if there's a language tag after ```
-                const lang = trimmed.slice(3).trim();
-                blockHasLang = lang.length > 0;
+
+        if (!inBlock) {
+            // Even number of fences: block opens and closes on this line
+            if (fenceCount % 2 === 0) {
+                ranges.push({ start: i, end: i + 1 });
+                continue;
+            }
+            // Fence in the middle of a line and never closed: it's just text
+            if (!trimmed.startsWith("```") && !lines.slice(i + 1).some(l => l.includes("```"))) {
+                continue;
+            }
+            inBlock = true;
+            blockStart = i;
+            // Plain block = the opening line is exactly ```; anything else
+            // (language tag, text before the fence) counts as "has language"
+            blockHasLang = trimmed !== "```";
+        } else {
+            inBlock = false;
+            if (blockHasLang) {
+                // Language-tagged code block — always protect
+                ranges.push({ start: blockStart, end: i + 1 });
             } else {
-                inBlock = false;
-                if (blockHasLang) {
-                    // Language-tagged code block — always protect
-                    ranges.push({ start: blockStart, end: i + 1 });
+                // Plain code block — only unwrap it if it contains a table
+                const innerText = lines.slice(blockStart + 1, i).join("\n");
+                if (unwrapTables && detectTable(innerText)) {
+                    // Replace ``` lines with empty lines so line indices stay aligned
+                    lines[blockStart] = "";
+                    lines[i] = "";
                 } else {
-                    // Plain code block — check if it contains GFM patterns
-                    const innerLines = lines.slice(blockStart + 1, i);
-                    const innerText = innerLines.join("\n");
-                    if (innerText.trim() && hasGfmLikeContent(innerText)) {
-                        // Contains GFM — don't protect, but strip the ``` wrapper lines
-                        // Replace ``` lines with empty lines so line indices stay aligned
-                        lines[blockStart] = "";
-                        lines[i] = "";
-                    } else {
-                        // Plain code with no GFM — protect it
-                        ranges.push({ start: blockStart, end: i + 1 });
-                    }
+                    ranges.push({ start: blockStart, end: i + 1 });
                 }
             }
         }
@@ -125,22 +148,6 @@ function findCodeBlockRanges(lines: string[]): LineRange[] {
     }
 
     return ranges;
-}
-
-/**
- * Quick check if text contains GFM-like patterns (table pipes, task lists, etc.)
- * Used to decide whether plain code blocks should be unwrapped.
- */
-function hasGfmLikeContent(text: string): boolean {
-    // Table: line with pipes
-    if (/^\s*\|.+\|/m.test(text) && /^\s*\|[\s:_-]+\|/m.test(text)) return true;
-    // Task list
-    if (/^\s*-\s*\[[ xX]\]/m.test(text)) return true;
-    // Heading
-    if (/^#{1,6}\s+\S/m.test(text)) return true;
-    // HR
-    if (/^\s*([-*_])\s*\1\s*\1[\s\1]*$/m.test(text)) return true;
-    return false;
 }
 
 /**
@@ -177,7 +184,7 @@ function mergeRanges(ranges: LineRange[]): LineRange[] {
  */
 export function parseMessage(text: string, flags: FeatureFlags): ParsedBlock[] {
     const lines = text.split("\n");
-    const codeRanges = findCodeBlockRanges(lines);
+    const codeRanges = findCodeBlockRanges(lines, flags.enableTables);
 
     // Track which lines are claimed by which feature
     // Each entry: { start, end, block }
@@ -195,6 +202,17 @@ export function parseMessage(text: string, flags: FeatureFlags): ParsedBlock[] {
                 block: { type: "mermaidBlock", content: { code: mb.code } },
             });
         }
+    }
+
+    // Code blocks — hand them to Discord's own renderer (mermaid blocks are
+    // already claimed above, so they're skipped here)
+    for (const r of codeRanges) {
+        if (claimed.some(c => r.start < c.end && r.end > c.start)) continue;
+        claimed.push({
+            start: r.start,
+            end: r.end,
+            block: { type: "codeBlock", content: { raw: lines.slice(r.start, r.end).join("\n") } },
+        });
     }
 
     // Math blocks ($$...$$) — extract BEFORE other parsers to take priority

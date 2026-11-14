@@ -17,12 +17,13 @@
 
 /* ============================================================
  * CONTENT HIDING
- * Hide original message content when enhanced rendering is active.
- * Uses CSS :has() — no JavaScript DOM manipulation needed.
+ * The original message content is hidden by a <style> rule that the
+ * enhanced content renders for its own message id (see index.tsx):
+ *     #message-content-<id> { display: none }
+ * It is scoped by id on purpose: a generic "any message-content inside a
+ * message with enhanced content" rule also hid the text of messages that
+ * contain another rendered message (e.g. MessageLinkEmbeds).
  * ============================================================ */
-[role="article"]:has(.bm-enhanced-content) [id^="message-content-"] {
-    display: none;
-}
 
 /* ============================================================
  * TABLE
@@ -276,6 +277,24 @@
 .bm-blockquote-depth-5 { border-left-width: 2px; margin-left: 0; }
 .bm-blockquote-depth-6 { border-left-width: 2px; margin-left: 0; }
 
+/* Headings inside nested blockquotes: tighter spacing */
+.bm-blockquote .bm-heading {
+    margin: 8px 0 2px;
+}
+
+.bm-blockquote-content > div:first-child > .bm-heading {
+    margin-top: 2px;
+}
+
+/* Subtext (-# text) */
+.bm-subtext {
+    display: block;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--text-muted);
+    margin: 2px 0;
+}
+
 .bm-blockquote-root-text {
     color: var(--text-normal);
 }
@@ -287,6 +306,19 @@
 .bm-enhanced-content {
     display: flow-root;
     color: var(--text-normal, #dcddde);
+    /* Vencord appends accessories AFTER attachments/embeds/stickers in the
+     * same container, so the replaced text would end up below them. Put it
+     * first; attachments and embeds then follow it, like the original text. */
+    order: -1;
+}
+
+/* "order" only works in a grid/flex container. Discord's accessories
+ * container is already a grid; this restates the same layout so the reorder
+ * also works if that ever changes. */
+[id^="message-accessories-"]:has(> .bm-enhanced-content) {
+    display: grid;
+    grid-auto-flow: row;
+    row-gap: 0.25rem;
 }
 
 /* Hide original message content when enhanced rendering is present.
@@ -455,4 +487,95 @@
     font-family: var(--font-code);
     font-size: 0.85em;
     color: var(--text-muted);
+}
+
+/* ============================================================
+ * Code blocks (rendered by Discord's own parser)
+ * :where() keeps specificity at zero so Discord's native styles win;
+ * these are only a fallback if its markup class can't be found.
+ * ============================================================ */
+.bm-code-block {
+    position: relative;
+    margin: 4px 0;
+}
+
+/* Hide Discord's native copy button (it doesn't work outside its own message
+ * renderer); ours is the .bm-cb-btn below. */
+.bm-code-block [class*="copy" i]:not(.bm-cb-btn),
+.bm-code-block [class*="codeActions" i] {
+    display: none !important;
+}
+
+/* Our copy button: top-right corner, shown on hover */
+.bm-cb-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+    border-radius: 4px;
+    background: var(--background-secondary, rgba(0, 0, 0, 0.5));
+    color: var(--interactive-normal, #b5bac1);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.bm-code-block:hover .bm-cb-btn,
+.bm-cb-btn:focus-visible {
+    opacity: 1;
+}
+
+.bm-cb-btn:hover {
+    color: var(--interactive-hover, #fff);
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.1));
+}
+
+.bm-cb-btn-done,
+.bm-cb-btn-done:hover {
+    color: var(--status-positive, #23a55a);
+}
+
+.bm-cb-btn-fail,
+.bm-cb-btn-fail:hover {
+    color: var(--status-danger, #f23f43);
+}
+
+:where(.bm-code-block pre) {
+    margin: 0;
+    max-width: 100%;
+}
+
+:where(.bm-code-block pre code) {
+    display: block;
+    overflow-x: auto;
+    padding: 0.5em;
+    border-radius: 4px;
+    background: var(--background-secondary, rgba(0, 0, 0, 0.3));
+    border: 1px solid var(--background-tertiary, rgba(255, 255, 255, 0.1));
+    font-family: var(--font-code, monospace);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+}
+
+/* ============================================================
+ * Color swatch next to hex colors (#RRGGBB)
+ * Light inner border + dark outer ring so it's visible on any background.
+ * ============================================================ */
+.bm-color-swatch {
+    display: inline-block;
+    width: 0.85em;
+    height: 0.85em;
+    margin-left: 0.3em;
+    vertical-align: -0.08em;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
 }
