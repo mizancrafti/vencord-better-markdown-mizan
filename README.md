@@ -117,8 +117,8 @@ All features can be individually toggled in **Vencord Settings → Plugins → B
 ### Themes
 
 - **Discord Dark / Light / GitHub** — fixed looks built on Discord's own CSS variables.
-- **Neutron / Jaya Abadi** — takes its colors from the variables of the Neutron Discord theme (`--themeColor1`, `--themeColor2`), so the plugin matches that theme. Mermaid diagrams are recolored too.
-- **Custom** — pick "Custom" and an editor appears under the theme dropdown: a color picker + hex field for every element (headings, the 6 blockquote levels and background, table header/borders/rows, divider, task checkbox, footnote links, copy button, and the Mermaid diagram frame/nodes/lines/text). Below it, a **live preview** shows a sample of every element and updates as you change colors; the visible messages in the chat update too. Each field has a reset button, plus "Reset all". The defaults reproduce the Neutron look.
+- **Neutron / Jaya Abadi (mizan's theme)** — takes its colors from the variables of the Neutron Discord theme (`--themeColor1`, `--themeColor2`), so the plugin matches that theme. Mermaid diagrams are recolored too.
+- **Custom** — pick "Custom" and an editor appears under the theme dropdown: a color picker + hex field for every element (the 6 heading levels, the 6 blockquote levels and background, table header/borders/rows, divider, task checkbox, footnote links, copy button, and the Mermaid diagram frame/nodes/lines/text). Below it, a **live preview** shows a sample of every element and updates as you change colors; the visible messages in the chat update too. Each field has a reset button, plus "Reset all". The defaults reproduce the Neutron look.
 
 Neutron and Custom share the same `--bm-*` CSS variables (see the end of `style.css`), so adding a new variable-driven theme only means defining those variables.
 

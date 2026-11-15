@@ -25,8 +25,12 @@ const f = (group: string, key: string, label: string, cssVar: string, def: strin
 
 // Defaults reproduce the Neutron look (orange accent + blue secondary)
 export const COLOR_FIELDS: ColorField[] = [
-    f("Headings", "headingMain", "Headings 1–2", "--bm-h-main", "#ffa130"),
-    f("Headings", "headingSub", "Headings 3–4", "--bm-h-sub", "#a0b4c7"),
+    f("Headings", "heading1", "Heading 1", "--bm-h-1", "#ffa130"),
+    f("Headings", "heading2", "Heading 2", "--bm-h-2", "#ffa130"),
+    f("Headings", "heading3", "Heading 3", "--bm-h-3", "#a0b4c7"),
+    f("Headings", "heading4", "Heading 4", "--bm-h-4", "#a0b4c7"),
+    f("Headings", "heading5", "Heading 5", "--bm-h-5", "#949ba4"),
+    f("Headings", "heading6", "Heading 6", "--bm-h-6", "#949ba4"),
 
     f("Blockquotes", "quote1", "Level 1 border", "--bm-bq-1", "#ffa130"),
     f("Blockquotes", "quote2", "Level 2 border", "--bm-bq-2", "#a0b4c7"),
@@ -70,11 +74,20 @@ export function isValidHex(value: unknown): value is string {
     return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
+// Colors saved before headings had one color per level (1–2 and 3–4 were shared)
+const LEGACY_KEYS: Record<string, string> = {
+    heading1: "headingMain",
+    heading2: "headingMain",
+    heading3: "headingSub",
+    heading4: "headingSub",
+};
+
 /** Saved colors merged over the defaults; anything invalid falls back to the default. */
 export function resolveColors(saved: CustomColors | undefined | null): CustomColors {
     const out: CustomColors = {};
     for (const field of COLOR_FIELDS) {
-        const v = saved?.[field.key];
+        let v = saved?.[field.key];
+        if (!isValidHex(v) && LEGACY_KEYS[field.key]) v = saved?.[LEGACY_KEYS[field.key]];
         out[field.key] = isValidHex(v) ? v.toLowerCase() : field.default;
     }
     return out;

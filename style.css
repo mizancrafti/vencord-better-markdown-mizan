@@ -597,8 +597,12 @@
     /* The secondary color is dark on a dark background: lighten it for text/borders */
     --bm-accent-2-light: color-mix(in srgb, var(--bm-accent-2) 55%, white);
 
-    --bm-h-main: var(--bm-accent);
-    --bm-h-sub: var(--bm-accent-2-light);
+    --bm-h-1: var(--bm-accent);
+    --bm-h-2: var(--bm-accent);
+    --bm-h-3: var(--bm-accent-2-light);
+    --bm-h-4: var(--bm-accent-2-light);
+    --bm-h-5: var(--text-muted);
+    --bm-h-6: var(--text-muted);
 
     --bm-bq-1: var(--bm-accent);
     --bm-bq-2: var(--bm-accent-2-light);
@@ -630,17 +634,21 @@
     --bm-mermaid-border: var(--bm-accent-2);
 }
 
-/* Headings */
-.bm-themed .bm-heading-1,
-.bm-themed .bm-heading-2 {
-    color: var(--bm-h-main);
-    border-bottom-color: color-mix(in srgb, var(--bm-h-main) 40%, transparent);
+/* Headings: one color per level (h1 and h2 also tint their underline) */
+.bm-themed .bm-heading-1 {
+    color: var(--bm-h-1);
+    border-bottom-color: color-mix(in srgb, var(--bm-h-1) 40%, transparent);
 }
 
-.bm-themed .bm-heading-3,
-.bm-themed .bm-heading-4 {
-    color: var(--bm-h-sub);
+.bm-themed .bm-heading-2 {
+    color: var(--bm-h-2);
+    border-bottom-color: color-mix(in srgb, var(--bm-h-2) 40%, transparent);
 }
+
+.bm-themed .bm-heading-3 { color: var(--bm-h-3); }
+.bm-themed .bm-heading-4 { color: var(--bm-h-4); }
+.bm-themed .bm-heading-5 { color: var(--bm-h-5); }
+.bm-themed .bm-heading-6 { color: var(--bm-h-6); }
 
 /* Blockquotes (border colors per level come from --bm-bq-1..6, see Blockquote.tsx) */
 .bm-themed .bm-blockquote {

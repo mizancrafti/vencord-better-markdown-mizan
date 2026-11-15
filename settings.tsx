@@ -73,7 +73,7 @@ export const settings = definePluginSettings({
             { label: "Discord Dark", value: "dark", default: true },
             { label: "Discord Light", value: "light" },
             { label: "GitHub", value: "github" },
-            { label: "Neutron / Jaya Abadi (uses the colors of your Neutron theme)", value: "neutron" },
+            { label: "Neutron / Jaya Abadi (mizan's theme)", value: "neutron" },
             { label: "Custom (edit every color below)", value: "custom" },
         ],
         restartNeeded: false,
