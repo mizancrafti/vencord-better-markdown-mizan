@@ -8,20 +8,29 @@
 
 import { useState, useEffect, useRef } from "@webpack/common";
 import { renderDiagram } from "../mermaid-loader";
+import { type CustomColors, getMermaidPalette, type ThemeName } from "../theme";
 
 let idCounter = 0;
 
-export function MermaidBlock({ code }: { code: string }) {
+export function MermaidBlock({ code, theme = "dark", colors }: { code: string; theme?: ThemeName; colors?: CustomColors; }) {
     const [svg, setSvg] = useState<string | null>(null);
     const [error, setError] = useState(false);
     const idRef = useRef(`bm-mermaid-${Date.now()}-${idCounter++}`);
+    const renderCount = useRef(0);
+
+    // Only the colors Mermaid uses matter for re-rendering
+    const paletteKey = JSON.stringify(getMermaidPalette(theme === "custom" ? "custom" : "dark", colors));
 
     useEffect(() => {
         let cancelled = false;
 
-        renderDiagram(idRef.current, code)
+        // The old diagram stays visible until the new one is ready (no flicker
+        // while colors are being edited). A fresh id per render avoids clashes.
+        const id = `${idRef.current}-${renderCount.current++}`;
+        renderDiagram(id, code, getMermaidPalette(theme, colors))
             .then(result => {
                 if (cancelled) return;
+                setError(false);
                 setSvg(result);
             })
             .catch(() => {
@@ -30,7 +39,7 @@ export function MermaidBlock({ code }: { code: string }) {
             });
 
         return () => { cancelled = true; };
-    }, [code]);
+    }, [code, theme, paletteKey]);
 
     if (error) {
         return (

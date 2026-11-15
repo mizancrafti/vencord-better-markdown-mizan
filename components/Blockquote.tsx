@@ -22,8 +22,11 @@ const DEPTH_COLORS = [
     "var(--brand-360, #7289da)",   // depth 6+: light blurple
 ];
 
+// Each level reads --bm-bq-<n> (defined by the Neutron and Custom themes);
+// the hardcoded color is the fallback for the other themes.
 function getDepthColor(depth: number): string {
-    return DEPTH_COLORS[(depth - 1) % DEPTH_COLORS.length];
+    const idx = (depth - 1) % DEPTH_COLORS.length;
+    return `var(--bm-bq-${idx + 1}, ${DEPTH_COLORS[idx]})`;
 }
 
 /**
@@ -75,12 +78,18 @@ function renderQuoteLines(lines: string[]) {
     return out;
 }
 
-function QuoteNode({ node }: { node: BlockquoteNode }) {
+/**
+ * `level` is the real nesting level (1 = first quote, 2 = a quote inside it...).
+ * It's computed here instead of using node.depth: the parser recurses with a
+ * relative base, so node.depth is 1 at every level and all borders came out
+ * with the same color.
+ */
+function QuoteNode({ node, level }: { node: BlockquoteNode; level: number; }) {
     return (
         <blockquote
-            className={`bm-blockquote bm-blockquote-depth-${Math.min(node.depth, 6)}`}
+            className={`bm-blockquote bm-blockquote-depth-${Math.min(level, 6)}`}
             style={{
-                borderLeftColor: getDepthColor(node.depth),
+                borderLeftColor: getDepthColor(level),
             }}
         >
             {node.lines.length > 0 && (
@@ -89,7 +98,7 @@ function QuoteNode({ node }: { node: BlockquoteNode }) {
                 </div>
             )}
             {node.children.map((child, i) => (
-                <QuoteNode key={i} node={child} />
+                <QuoteNode key={i} node={child} level={level + 1} />
             ))}
         </blockquote>
     );
@@ -99,7 +108,7 @@ export function Blockquote({ data }: { data: BlockquoteData }) {
     return (
         <div className="bm-blockquote-wrapper">
             {data.root.children.map((child, i) => (
-                <QuoteNode key={i} node={child} />
+                <QuoteNode key={i} node={child} level={1} />
             ))}
             {data.root.lines.length > 0 && (
                 <div className="bm-blockquote-root-text">

@@ -52,6 +52,8 @@ Discord's existing markdown (bold, italic, code, spoilers, mentions, emoji) is f
 src/userplugins/
 └── betterMarkdown/
     ├── index.tsx          # Plugin definition + renderMessageAccessory
+    ├── settings.tsx       # Plugin settings (incl. theme select + color editor)
+    ├── theme.ts           # Theme names, editable color fields, color helpers
     ├── style.css          # Styles using Discord CSS custom properties
     ├── katex-loader.ts    # CDN loader for KaTeX
     ├── mermaid-loader.ts  # CDN lazy-loader for Mermaid
@@ -77,6 +79,8 @@ src/userplugins/
         ├── Math.tsx       # KaTeX inline + block rendering
         ├── Mermaid.tsx    # Mermaid diagram rendering
         ├── CodeBlock.tsx  # Code blocks via Discord's parser + copy button
+        ├── Enhanced.tsx   # renderBlock() + EnhancedContent wrapper (live theme)
+        ├── ThemeEditor.tsx  # Custom theme color editor + live preview
         ├── ColorSwatch.tsx  # Color square next to hex colors
         └── shared.tsx     # renderInline() via Discord's parser
 ```
@@ -107,7 +111,15 @@ All features can be individually toggled in **Vencord Settings → Plugins → B
 - **Enable Math** — KaTeX formula rendering (default: on)
 - **Enable Mermaid** — Diagram rendering (default: on)
 - **Enable Color Swatches** — Color square next to hex colors (default: on)
-- **Theme** — Discord Dark (default), Discord Light, or GitHub
+- **Theme** — Discord Dark (default), Discord Light, GitHub, Neutron / Jaya Abadi, or Custom (see below)
+
+### Themes
+
+- **Discord Dark / Light / GitHub** — fixed looks built on Discord's own CSS variables.
+- **Neutron / Jaya Abadi** — takes its colors from the variables of the Neutron Discord theme (`--themeColor1`, `--themeColor2`), so the plugin matches that theme. Mermaid diagrams are recolored too.
+- **Custom** — pick "Custom" and an editor appears under the theme dropdown: a color picker + hex field for every element (headings, the 6 blockquote levels and background, table header/borders/rows, divider, task checkbox, footnote links, copy button, and the Mermaid diagram frame/nodes/lines/text). Below it, a **live preview** shows a sample of every element and updates as you change colors; the visible messages in the chat update too. Each field has a reset button, plus "Reset all". The defaults reproduce the Neutron look.
+
+Neutron and Custom share the same `--bm-*` CSS variables (see the end of `style.css`), so adding a new variable-driven theme only means defining those variables.
 
 ## Syntax Examples
 

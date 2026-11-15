@@ -579,3 +579,291 @@
     border-radius: 2px;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
 }
+
+/* ============================================================
+ * VARIABLE-DRIVEN THEMES: "Neutron" and "Custom"
+ *
+ * Both set the same --bm-* variables and share the rules below
+ * (.bm-themed). Neutron derives them from the variables of the Neutron
+ * Discord theme (--themeColor1 / --themeColor2); Custom gets them inline
+ * from the color editor in the plugin settings.
+ * Backgrounds are applied with color-mix() at a fixed opacity, so the
+ * color pickers can stay plain #rrggbb.
+ * ============================================================ */
+
+.bm-theme-neutron {
+    --bm-accent: var(--themeColor1, #FFA130);
+    --bm-accent-2: var(--themeColor2, #2C5882);
+    /* The secondary color is dark on a dark background: lighten it for text/borders */
+    --bm-accent-2-light: color-mix(in srgb, var(--bm-accent-2) 55%, white);
+
+    --bm-h-main: var(--bm-accent);
+    --bm-h-sub: var(--bm-accent-2-light);
+
+    --bm-bq-1: var(--bm-accent);
+    --bm-bq-2: var(--bm-accent-2-light);
+    --bm-bq-3: color-mix(in srgb, var(--bm-accent) 60%, white);
+    --bm-bq-4: var(--bm-accent-2);
+    --bm-bq-5: color-mix(in srgb, var(--bm-accent) 65%, black);
+    --bm-bq-6: color-mix(in srgb, var(--bm-accent-2-light) 60%, white);
+    --bm-bq-bg: #000;
+
+    --bm-table-header-bg: #000;
+    --bm-table-header-text: var(--bm-accent);
+    --bm-table-header-line: var(--bm-accent);
+    --bm-table-border: var(--bm-accent-2);
+    --bm-table-row-alt: var(--bm-accent-2);
+
+    --bm-hr-start: var(--bm-accent);
+    --bm-hr-end: var(--bm-accent-2);
+
+    --bm-task-checked: var(--bm-accent);
+    --bm-task-mark: var(--backgroundColor, #01112A);
+
+    --bm-footnote: var(--bm-accent);
+
+    --bm-copy-bg: #000;
+    --bm-copy-border: var(--bm-accent-2);
+    --bm-copy-icon: var(--bm-accent);
+
+    --bm-mermaid-bg: #000;
+    --bm-mermaid-border: var(--bm-accent-2);
+}
+
+/* Headings */
+.bm-themed .bm-heading-1,
+.bm-themed .bm-heading-2 {
+    color: var(--bm-h-main);
+    border-bottom-color: color-mix(in srgb, var(--bm-h-main) 40%, transparent);
+}
+
+.bm-themed .bm-heading-3,
+.bm-themed .bm-heading-4 {
+    color: var(--bm-h-sub);
+}
+
+/* Blockquotes (border colors per level come from --bm-bq-1..6, see Blockquote.tsx) */
+.bm-themed .bm-blockquote {
+    background: color-mix(in srgb, var(--bm-bq-bg) 20%, transparent);
+    border-radius: 0 6px 6px 0;
+}
+
+/* Tables */
+.bm-themed .bm-table-wrapper {
+    border: 1px solid var(--bm-table-border);
+    border-radius: 6px;
+}
+
+.bm-themed .bm-table-th {
+    background: color-mix(in srgb, var(--bm-table-header-bg) 50%, transparent);
+    color: var(--bm-table-header-text);
+    border-bottom: 2px solid var(--bm-table-header-line);
+}
+
+.bm-themed .bm-table-td {
+    border-bottom-color: color-mix(in srgb, var(--bm-table-border) 60%, transparent);
+}
+
+.bm-themed .bm-table-row-alt {
+    background: color-mix(in srgb, var(--bm-table-row-alt) 18%, transparent);
+}
+
+.bm-themed .bm-table tbody tr:hover {
+    background: color-mix(in srgb, var(--bm-table-header-text) 12%, transparent);
+}
+
+/* Divider */
+.bm-themed .bm-hr {
+    height: 2px;
+    background: linear-gradient(90deg, var(--bm-hr-start), var(--bm-hr-end) 70%, transparent);
+}
+
+.bm-themed .bm-footnote-divider {
+    background: var(--bm-hr-end);
+}
+
+/* Task lists */
+.bm-themed .bm-task-checkbox {
+    border-color: color-mix(in srgb, var(--bm-task-checked) 70%, transparent);
+}
+
+.bm-themed .bm-task-checkbox:checked {
+    background: var(--bm-task-checked);
+    border-color: var(--bm-task-checked);
+}
+
+.bm-themed .bm-task-checkbox:checked::after {
+    border-color: var(--bm-task-mark);
+}
+
+/* Footnotes */
+.bm-themed .bm-footnote-link,
+.bm-themed .bm-footnote-backref {
+    color: var(--bm-footnote);
+}
+
+.bm-themed .bm-footnote-link:hover {
+    color: color-mix(in srgb, var(--bm-footnote) 70%, white);
+}
+
+/* Code block copy button */
+.bm-themed .bm-cb-btn {
+    background: color-mix(in srgb, var(--bm-copy-bg) 50%, transparent);
+    border-color: var(--bm-copy-border);
+    color: var(--bm-copy-icon);
+}
+
+.bm-themed .bm-cb-btn:hover {
+    border-color: var(--bm-copy-icon);
+    color: color-mix(in srgb, var(--bm-copy-icon) 70%, white);
+}
+
+.bm-themed .bm-cb-btn.bm-cb-btn-done,
+.bm-themed .bm-cb-btn.bm-cb-btn-done:hover {
+    color: var(--status-positive, #23a55a);
+}
+
+.bm-themed .bm-cb-btn.bm-cb-btn-fail,
+.bm-themed .bm-cb-btn.bm-cb-btn-fail:hover {
+    color: var(--status-danger, #f23f43);
+}
+
+/* Mermaid frame (the diagram itself is colored by Mermaid's config) */
+.bm-themed .bm-mermaid-wrapper {
+    background: color-mix(in srgb, var(--bm-mermaid-bg) 50%, transparent);
+    border: 1px solid var(--bm-mermaid-border);
+}
+
+.bm-themed .bm-mermaid-wrapper svg {
+    background: transparent !important;
+}
+
+/* ============================================================
+ * CUSTOM THEME EDITOR (plugin settings)
+ * ============================================================ */
+
+.bm-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 12px 0;
+    color: var(--text-normal);
+}
+
+.bm-editor-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.bm-editor-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--header-primary, var(--text-normal));
+}
+
+.bm-editor-hint {
+    margin-top: 2px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.bm-editor-reset-all {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background: var(--brand-500, #5865f2);
+    color: #fff;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.bm-editor-reset-all:hover {
+    filter: brightness(1.1);
+}
+
+.bm-editor-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.bm-editor-group {
+    min-width: 0;
+    margin: 0;
+    padding: 4px 10px 8px;
+    border: 1px solid var(--background-modifier-accent, rgba(255, 255, 255, 0.1));
+    border-radius: 6px;
+}
+
+.bm-editor-group legend {
+    padding: 0 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.bm-editor-row {
+    display: grid;
+    grid-template-columns: 1fr 32px 78px 24px;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    font-size: 0.85rem;
+}
+
+.bm-editor-color {
+    width: 32px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--background-modifier-accent, rgba(255, 255, 255, 0.2));
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+}
+
+.bm-editor-hex {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3px 6px;
+    border: 1px solid var(--background-modifier-accent, rgba(255, 255, 255, 0.2));
+    border-radius: 4px;
+    background: var(--background-secondary, rgba(0, 0, 0, 0.3));
+    color: var(--text-normal);
+    font-family: var(--font-code, monospace);
+    font-size: 0.8rem;
+}
+
+.bm-editor-reset {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--interactive-normal, #b5bac1);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.bm-editor-reset:hover:not(:disabled) {
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.1));
+    color: var(--interactive-hover, #fff);
+}
+
+.bm-editor-reset:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+
+.bm-editor-preview {
+    padding: 12px 14px;
+    border: 1px solid var(--background-modifier-accent, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    background: var(--background-primary, #313338);
+}
