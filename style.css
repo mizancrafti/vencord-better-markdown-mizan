@@ -867,3 +867,26 @@
     border-radius: 8px;
     background: var(--background-primary, #313338);
 }
+
+/* ============================================================
+ * Code blocks: match the native ones
+ * When the plugin finds the original (hidden) message it copies the width and
+ * the computed look of its native <code> into --bm-n-* (see nativeCodeStyle.ts),
+ * so our blocks look exactly like Discord's with any theme.
+ * ============================================================ */
+.bm-code-block[data-bm-synced] pre {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+.bm-code-block[data-bm-synced] pre code {
+    background-color: var(--bm-n-bg) !important;
+    color: var(--bm-n-color);
+    border: var(--bm-n-border) !important;
+    border-radius: var(--bm-n-radius) !important;
+    padding: var(--bm-n-padding) !important;
+    font-family: var(--bm-n-font) !important;
+    font-size: var(--bm-n-size) !important;
+    line-height: var(--bm-n-line) !important;
+}

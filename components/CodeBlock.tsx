@@ -10,12 +10,17 @@
  */
 
 import { findByPropsLazy } from "@webpack";
-import { Parser, useRef, useState } from "@webpack/common";
+import { Parser, useEffect, useRef, useState } from "@webpack/common";
 
+import { type NativeCodeStyle, readNativeCodeStyle, sameNativeStyle } from "./nativeCodeStyle";
+
+// The CSS module that has both "markup" and "codeActions" is the one that
+// styles code blocks; plain "markup" is only a fallback.
 const MarkupClasses = findByPropsLazy("markup");
 let markupClass: string | null = null;
 
-// Discord scopes its code block styles under its "markup" class; reuse it.
+// Fallback (e.g. the settings preview, where there's no original message to
+// copy from): Discord scopes its code block styles under its "markup" class.
 function getMarkupClass(): string {
     if (markupClass !== null) return markupClass;
     try {
@@ -97,6 +102,35 @@ const FailIcon = () => (
 export function CodeBlock({ raw }: { raw: string; }) {
     const [status, setStatus] = useState<"idle" | "ok" | "fail">("idle");
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const wrapper = useRef<HTMLDivElement>(null);
+    const [native, setNative] = useState<NativeCodeStyle | null>(null);
+
+    // Copy the look and width of the native code block of the original message,
+    // and keep them in sync when the chat is resized
+    useEffect(() => {
+        const el = wrapper.current;
+        if (!el) return;
+
+        let last: NativeCodeStyle | null = null;
+        const sync = () => {
+            try {
+                const next = readNativeCodeStyle(el);
+                if (!sameNativeStyle(last, next)) {
+                    last = next;
+                    setNative(next);
+                }
+            } catch {
+                // Keep the fallback look
+            }
+        };
+
+        sync();
+        const container = el.closest('[id^="message-accessories-"]') ?? el.parentElement;
+        if (!container || typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(sync);
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [raw]);
 
     let rendered: React.ReactNode = null;
     try {
@@ -117,7 +151,16 @@ export function CodeBlock({ raw }: { raw: string; }) {
     }
 
     return (
-        <div className={`bm-code-block ${getMarkupClass()}`.trim()}>
+        <div
+            ref={wrapper}
+            className={`bm-code-block ${native?.className || getMarkupClass()}`.trim()}
+            data-bm-synced={native && Object.keys(native.vars).length ? "" : undefined}
+            style={native ? {
+                ...native.vars,
+                width: native.width ? `${native.width}px` : undefined,
+                maxWidth: "100%",
+            } as React.CSSProperties : undefined}
+        >
             {rendered}
             <button
                 type="button"

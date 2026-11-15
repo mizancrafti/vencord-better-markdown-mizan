@@ -36,7 +36,7 @@ BetterMarkdown uses Vencord's `renderMessageAccessory` API to render enhanced co
 4. Moves the enhanced block to the top of the accessories container (`order: -1`), so attachments, embeds and stickers stay *below* the text, like in the original message
 5. If no patterns → does nothing (**zero overhead**)
 
-**Code blocks:** every ```` ``` ```` block is handed to Discord's own markdown renderer, so it looks and highlights exactly like a native one. The native copy button doesn't work outside Discord's message renderer, so it is hidden and replaced by a working one (copies only the code, without the fences). Blocks inside nested blockquotes and blocks with text before the fence on the same line (`text: ```bash`) are supported too. The only exceptions: ```` ```mermaid ```` blocks become diagrams, and **plain** ```` ``` ```` blocks (no language tag) that contain a **table** are unwrapped and rendered as a table.
+**Code blocks:** every ```` ``` ```` block is handed to Discord's own markdown renderer, so it looks and highlights like a native one. Because the plugin's blocks are drawn outside the element where Discord draws its own, they would miss the theme's styling (they came out black and full width), so the plugin reads the real look from the original message — which Discord still renders, hidden: the width of the native block, its background, border, padding and font — and applies it to its own blocks. This follows any theme and keeps working if Discord renames its CSS classes. The native copy button doesn't work outside Discord's message renderer, so it is hidden and replaced by a working one (copies only the code, without the fences). Blocks inside nested blockquotes and blocks with text before the fence on the same line (`text: ```bash`) are supported too. The only exceptions: ```` ```mermaid ```` blocks become diagrams, and **plain** ```` ``` ```` blocks (no language tag) that contain a **table** are unwrapped and rendered as a table.
 
 **Tables split across messages:** a message that starts with table rows but has no header of its own is treated as a continuation. The plugin looks at the previous messages by the same author (up to 20), finds the last table header + separator, and puts it in front, so the continuation renders as a normal table (with the original column names and alignment) instead of a headerless one.
 
@@ -79,6 +79,7 @@ src/userplugins/
         ├── Math.tsx       # KaTeX inline + block rendering
         ├── Mermaid.tsx    # Mermaid diagram rendering
         ├── CodeBlock.tsx  # Code blocks via Discord's parser + copy button
+        ├── nativeCodeStyle.ts  # Reads width/look of Discord's native code block
         ├── Enhanced.tsx   # renderBlock() + EnhancedContent wrapper (live theme)
         ├── ThemeEditor.tsx  # Custom theme color editor + live preview
         ├── ColorSwatch.tsx  # Color square next to hex colors
