@@ -23,56 +23,74 @@ export type CustomColors = Record<string, string>;
 const f = (group: string, key: string, label: string, cssVar: string, def: string): ColorField =>
     ({ group, key, label, cssVar, default: def });
 
-// Defaults reproduce the Neutron look (orange accent + blue secondary)
+// Defaults reproduce the "Discord Dark" theme. Fields that are transparent
+// in Discord have an alpha channel (#rrggbbaa).
 export const COLOR_FIELDS: ColorField[] = [
-    f("Headings", "heading1", "Heading 1", "--bm-h-1", "#ffa130"),
-    f("Headings", "heading2", "Heading 2", "--bm-h-2", "#ffa130"),
-    f("Headings", "heading3", "Heading 3", "--bm-h-3", "#a0b4c7"),
-    f("Headings", "heading4", "Heading 4", "--bm-h-4", "#a0b4c7"),
+    f("Headings", "heading1", "Heading 1", "--bm-h-1", "#f2f3f5"),
+    f("Headings", "heading2", "Heading 2", "--bm-h-2", "#f2f3f5"),
+    f("Headings", "heading3", "Heading 3", "--bm-h-3", "#f2f3f5"),
+    f("Headings", "heading4", "Heading 4", "--bm-h-4", "#f2f3f5"),
     f("Headings", "heading5", "Heading 5", "--bm-h-5", "#949ba4"),
     f("Headings", "heading6", "Heading 6", "--bm-h-6", "#949ba4"),
+    f("Headings", "headingLine", "Heading 1–2 underline", "--bm-h-line", "#4f545c7a"),
 
-    f("Blockquotes", "quote1", "Level 1 border", "--bm-bq-1", "#ffa130"),
-    f("Blockquotes", "quote2", "Level 2 border", "--bm-bq-2", "#a0b4c7"),
-    f("Blockquotes", "quote3", "Level 3 border", "--bm-bq-3", "#ffc783"),
-    f("Blockquotes", "quote4", "Level 4 border", "--bm-bq-4", "#2c5882"),
-    f("Blockquotes", "quote5", "Level 5 border", "--bm-bq-5", "#a6691f"),
-    f("Blockquotes", "quote6", "Level 6 border", "--bm-bq-6", "#c6d2dd"),
-    f("Blockquotes", "quoteBg", "Background", "--bm-bq-bg", "#000000"),
+    f("Blockquotes", "quote1", "Level 1 border", "--bm-bq-1", "#949ba4"),
+    f("Blockquotes", "quote2", "Level 2 border", "--bm-bq-2", "#5865f2"),
+    f("Blockquotes", "quote3", "Level 3 border", "--bm-bq-3", "#2dc770"),
+    f("Blockquotes", "quote4", "Level 4 border", "--bm-bq-4", "#faa61a"),
+    f("Blockquotes", "quote5", "Level 5 border", "--bm-bq-5", "#ed4245"),
+    f("Blockquotes", "quote6", "Level 6 border", "--bm-bq-6", "#7289da"),
+    f("Blockquotes", "quoteBg", "Background", "--bm-bq-bg", "#00000000"),
 
-    f("Tables", "tableHeaderBg", "Header background", "--bm-table-header-bg", "#000000"),
-    f("Tables", "tableHeaderText", "Header text", "--bm-table-header-text", "#ffa130"),
-    f("Tables", "tableHeaderLine", "Header underline", "--bm-table-header-line", "#ffa130"),
-    f("Tables", "tableBorder", "Border", "--bm-table-border", "#2c5882"),
-    f("Tables", "tableRowAlt", "Alternate rows", "--bm-table-row-alt", "#2c5882"),
+    f("Tables", "tableHeaderBg", "Header background", "--bm-table-header-bg", "#2b2d31"),
+    f("Tables", "tableHeaderText", "Header text", "--bm-table-header-text", "#f2f3f5"),
+    f("Tables", "tableHeaderLine", "Header underline", "--bm-table-header-line", "#4f545c7a"),
+    f("Tables", "tableBorder", "Outer border", "--bm-table-border", "#00000000"),
+    f("Tables", "tableRowLine", "Row lines", "--bm-table-row-line", "#4f545c3d"),
+    f("Tables", "tableRowAlt", "Alternate rows", "--bm-table-row-alt", "#232428"),
 
-    f("Divider", "hrStart", "Line start", "--bm-hr-start", "#ffa130"),
-    f("Divider", "hrEnd", "Line end", "--bm-hr-end", "#2c5882"),
+    f("Divider", "hrStart", "Line start", "--bm-hr-start", "#4f545c7a"),
+    f("Divider", "hrEnd", "Line end", "--bm-hr-end", "#4f545c7a"),
 
-    f("Task lists", "taskChecked", "Checked box", "--bm-task-checked", "#ffa130"),
+    f("Task lists", "taskChecked", "Checked box", "--bm-task-checked", "#5865f2"),
 
-    f("Footnotes", "footnoteLink", "Links", "--bm-footnote", "#ffa130"),
+    f("Footnotes", "footnoteLink", "Links", "--bm-footnote", "#5865f2"),
 
-    f("Code blocks (copy button)", "copyBg", "Background", "--bm-copy-bg", "#000000"),
-    f("Code blocks (copy button)", "copyBorder", "Border", "--bm-copy-border", "#2c5882"),
-    f("Code blocks (copy button)", "copyIcon", "Icon", "--bm-copy-icon", "#ffa130"),
+    f("Code blocks (copy button)", "copyBg", "Background", "--bm-copy-bg", "#2b2d31"),
+    f("Code blocks (copy button)", "copyBorder", "Border", "--bm-copy-border", "#ffffff1f"),
+    f("Code blocks (copy button)", "copyIcon", "Icon", "--bm-copy-icon", "#b5bac1"),
 
-    f("Mermaid diagrams", "mermaidBg", "Background", "--bm-mermaid-bg", "#000000"),
-    f("Mermaid diagrams", "mermaidBorder", "Frame", "--bm-mermaid-border", "#2c5882"),
-    f("Mermaid diagrams", "mermaidNodeBg", "Node fill", "--bm-mermaid-node-bg", "#264d75"),
-    f("Mermaid diagrams", "mermaidNodeBorder", "Node border", "--bm-mermaid-node-border", "#ffa130"),
-    f("Mermaid diagrams", "mermaidLine", "Lines and arrows", "--bm-mermaid-line", "#ffa130"),
-    f("Mermaid diagrams", "mermaidText", "Text", "--bm-mermaid-text", "#e6edf7"),
-    f("Mermaid diagrams", "mermaidCluster", "Group background", "--bm-mermaid-cluster", "#0e2644"),
+    // Mermaid defaults are the values of Mermaid's own built-in dark theme
+    f("Mermaid diagrams", "mermaidBg", "Background", "--bm-mermaid-bg", "#2b2d31"),
+    f("Mermaid diagrams", "mermaidBorder", "Frame", "--bm-mermaid-border", "#00000000"),
+    f("Mermaid diagrams", "mermaidNodeBg", "Node fill", "--bm-mermaid-node-bg", "#1f2020"),
+    f("Mermaid diagrams", "mermaidNodeBorder", "Node border", "--bm-mermaid-node-border", "#cccccc"),
+    f("Mermaid diagrams", "mermaidLine", "Lines and arrows", "--bm-mermaid-line", "#d3d3d3"),
+    f("Mermaid diagrams", "mermaidText", "Text", "--bm-mermaid-text", "#e0dfdf"),
+    f("Mermaid diagrams", "mermaidCluster", "Group background", "--bm-mermaid-cluster", "#474949"),
 ];
 
 export const DEFAULT_COLORS: CustomColors = Object.fromEntries(
     COLOR_FIELDS.map(field => [field.key, field.default])
 );
 
+/** #rrggbb or #rrggbbaa */
 export function isValidHex(value: unknown): value is string {
-    return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
+    return typeof value === "string" && /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(value);
 }
+
+// Defaults of the previous versions of the Custom theme (the Neutron palette).
+// A saved value equal to one of these was never really customized (the editor
+// used to save every color on the first edit), so it follows the new defaults.
+const LEGACY_DEFAULTS: Record<string, string> = {
+    heading1: "#ffa130", heading2: "#ffa130", heading3: "#a0b4c7", heading4: "#a0b4c7",
+    quote1: "#ffa130", quote2: "#a0b4c7", quote3: "#ffc783", quote4: "#2c5882", quote5: "#a6691f", quote6: "#c6d2dd",
+    quoteBg: "#000000", tableHeaderBg: "#000000", tableHeaderText: "#ffa130", tableHeaderLine: "#ffa130",
+    tableBorder: "#2c5882", tableRowAlt: "#2c5882", hrStart: "#ffa130", hrEnd: "#2c5882",
+    taskChecked: "#ffa130", footnoteLink: "#ffa130", copyBg: "#000000", copyBorder: "#2c5882", copyIcon: "#ffa130",
+    mermaidBg: "#000000", mermaidBorder: "#2c5882", mermaidNodeBg: "#264d75", mermaidNodeBorder: "#ffa130",
+    mermaidLine: "#ffa130", mermaidText: "#e6edf7", mermaidCluster: "#0e2644",
+};
 
 // Colors saved before headings had one color per level (1–2 and 3–4 were shared)
 const LEGACY_KEYS: Record<string, string> = {
@@ -88,12 +106,23 @@ export function resolveColors(saved: CustomColors | undefined | null): CustomCol
     for (const field of COLOR_FIELDS) {
         let v = saved?.[field.key];
         if (!isValidHex(v) && LEGACY_KEYS[field.key]) v = saved?.[LEGACY_KEYS[field.key]];
-        out[field.key] = isValidHex(v) ? v.toLowerCase() : field.default;
+        const lower = isValidHex(v) ? v.toLowerCase() : null;
+        out[field.key] = lower && lower !== LEGACY_DEFAULTS[field.key] ? lower : field.default;
     }
     return out;
 }
 
-/** Inline CSS variables for the "Custom" theme (validated: only #rrggbb gets through). */
+/** Only the colors that differ from the defaults: that's what gets saved. */
+export function toOverrides(colors: CustomColors): CustomColors {
+    const out: CustomColors = {};
+    for (const field of COLOR_FIELDS) {
+        const v = colors[field.key];
+        if (isValidHex(v) && v.toLowerCase() !== field.default) out[field.key] = v.toLowerCase();
+    }
+    return out;
+}
+
+/** Inline CSS variables for the "Custom" theme (validated: only #rrggbb / #rrggbbaa gets through). */
 export function colorsToVars(colors: CustomColors): Record<string, string> {
     const resolved = resolveColors(colors);
     const vars: Record<string, string> = {};
@@ -182,12 +211,13 @@ export function neutronMermaidPalette(): MermaidPalette {
 /** Palette for the "Custom" theme. */
 export function customMermaidPalette(saved: CustomColors | undefined | null): MermaidPalette {
     const c = resolveColors(saved);
+    const opaque = (hex: string) => hex.slice(0, 7); // Mermaid's color math has no alpha
     return {
-        nodeBg: c.mermaidNodeBg,
-        nodeBorder: c.mermaidNodeBorder,
-        line: c.mermaidLine,
-        text: c.mermaidText,
-        cluster: c.mermaidCluster,
+        nodeBg: opaque(c.mermaidNodeBg),
+        nodeBorder: opaque(c.mermaidNodeBorder),
+        line: opaque(c.mermaidLine),
+        text: opaque(c.mermaidText),
+        cluster: opaque(c.mermaidCluster),
     };
 }
 

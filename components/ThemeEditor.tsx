@@ -1,16 +1,16 @@
 /*
- * Theme editor (settings UI for the "Custom" theme)
+ * Theme preview + editor (settings UI)
  *
- * Shown under the Theme dropdown only when "Custom" is selected: a color
- * picker + hex field for every element, and below it a live preview built
- * with the plugin's own components, so every change is visible instantly.
+ * Under the Theme dropdown, for every theme: a live preview built with the
+ * plugin's own components. With "Custom" selected it also shows a color
+ * picker + hex field for every element, so every change is visible instantly.
  */
 
 import { useState } from "@webpack/common";
 
 import { type FeatureFlags, parseMessage, type ParsedBlock } from "../parser";
 import { settings } from "../settings";
-import { COLOR_FIELDS, type ColorField, type CustomColors, DEFAULT_COLORS, isValidHex, resolveColors } from "../theme";
+import { COLOR_FIELDS, type ColorField, type CustomColors, isValidHex, resolveColors, toOverrides } from "../theme";
 import { EnhancedContent } from "./Enhanced";
 import { setColorSwatchesEnabled } from "./shared";
 
@@ -83,6 +83,8 @@ function ColorRow({ field, value, onChange }: {
     // While typing a hex by hand, keep the draft until it's a valid color
     const [draft, setDraft] = useState<string | null>(null);
     const isDefault = value === field.default;
+    // The picker only edits #rrggbb; keep the transparency (#rrggbbAA) the value already has
+    const alpha = value.length === 9 ? value.slice(7) : "";
 
     return (
         <div className="bm-editor-row">
@@ -90,17 +92,17 @@ function ColorRow({ field, value, onChange }: {
             <input
                 type="color"
                 className="bm-editor-color"
-                value={value}
+                value={value.slice(0, 7)}
                 onChange={e => {
                     setDraft(null);
-                    onChange(e.target.value.toLowerCase());
+                    onChange(e.target.value.toLowerCase() + alpha);
                 }}
             />
             <input
                 type="text"
                 className="bm-editor-hex"
                 value={draft ?? value}
-                maxLength={7}
+                maxLength={9}
                 spellCheck={false}
                 onChange={e => {
                     const v = e.target.value.trim();
@@ -127,11 +129,12 @@ function ColorRow({ field, value, onChange }: {
 
 export function ThemeEditor() {
     const s = settings.use(["theme", "customColors"]);
-    if (s.theme !== "custom") return null;
+    const isCustom = s.theme === "custom";
 
     const colors = resolveColors(s.customColors);
+    // Only the colors that differ from the defaults are saved
     const update = (key: string, value: string) => {
-        settings.store.customColors = { ...colors, [key]: value } as CustomColors;
+        settings.store.customColors = toOverrides({ ...colors, [key]: value } as CustomColors);
     };
 
     // Field groups in the order they're declared
@@ -142,35 +145,46 @@ export function ThemeEditor() {
 
     return (
         <div className="bm-editor">
-            <div className="bm-editor-header">
-                <div>
-                    <div className="bm-editor-title">Custom theme</div>
-                    <div className="bm-editor-hint">Pick a color for each element. The preview below updates as you change them.</div>
-                </div>
-                <button
-                    type="button"
-                    className="bm-editor-reset-all"
-                    onClick={() => { settings.store.customColors = { ...DEFAULT_COLORS }; }}
-                >
-                    Reset all
-                </button>
-            </div>
+            {isCustom ? (
+                <>
+                    <div className="bm-editor-header">
+                        <div>
+                            <div className="bm-editor-title">Custom theme</div>
+                            <div className="bm-editor-hint">
+                                Pick a color for each element. The preview below updates as you change them.
+                                Hex fields accept #rrggbb or #rrggbbaa (the last two digits are the transparency, 00 = invisible).
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className="bm-editor-reset-all"
+                            onClick={() => { settings.store.customColors = {}; }}
+                        >
+                            Reset all
+                        </button>
+                    </div>
 
-            <div className="bm-editor-groups">
-                {groups.map(group => (
-                    <fieldset key={group} className="bm-editor-group">
-                        <legend>{group}</legend>
-                        {COLOR_FIELDS.filter(field => field.group === group).map(field => (
-                            <ColorRow
-                                key={field.key}
-                                field={field}
-                                value={colors[field.key]}
-                                onChange={value => update(field.key, value)}
-                            />
+                    <div className="bm-editor-groups">
+                        {groups.map(group => (
+                            <fieldset key={group} className="bm-editor-group">
+                                <legend>{group}</legend>
+                                {COLOR_FIELDS.filter(field => field.group === group).map(field => (
+                                    <ColorRow
+                                        key={field.key}
+                                        field={field}
+                                        value={colors[field.key]}
+                                        onChange={value => update(field.key, value)}
+                                    />
+                                ))}
+                            </fieldset>
                         ))}
-                    </fieldset>
-                ))}
-            </div>
+                    </div>
+                </>
+            ) : (
+                <div className="bm-editor-hint">
+                    Preview of the selected theme. Choose "Custom" to edit the colors.
+                </div>
+            )}
 
             <div className="bm-editor-title">Live preview</div>
             <div className="bm-editor-preview">

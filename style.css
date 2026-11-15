@@ -587,8 +587,9 @@
  * (.bm-themed). Neutron derives them from the variables of the Neutron
  * Discord theme (--themeColor1 / --themeColor2); Custom gets them inline
  * from the color editor in the plugin settings.
- * Backgrounds are applied with color-mix() at a fixed opacity, so the
- * color pickers can stay plain #rrggbb.
+ * Colors are used as they are (the Custom editor accepts #rrggbbaa, so
+ * transparency is part of the value); Neutron bakes its opacities into its
+ * variables with color-mix().
  * ============================================================ */
 
 .bm-theme-neutron {
@@ -603,6 +604,7 @@
     --bm-h-4: var(--bm-accent-2-light);
     --bm-h-5: var(--text-muted);
     --bm-h-6: var(--text-muted);
+    --bm-h-line: color-mix(in srgb, var(--bm-accent) 40%, transparent);
 
     --bm-bq-1: var(--bm-accent);
     --bm-bq-2: var(--bm-accent-2-light);
@@ -610,13 +612,14 @@
     --bm-bq-4: var(--bm-accent-2);
     --bm-bq-5: color-mix(in srgb, var(--bm-accent) 65%, black);
     --bm-bq-6: color-mix(in srgb, var(--bm-accent-2-light) 60%, white);
-    --bm-bq-bg: #000;
+    --bm-bq-bg: color-mix(in srgb, #000 20%, transparent);
 
-    --bm-table-header-bg: #000;
+    --bm-table-header-bg: color-mix(in srgb, #000 50%, transparent);
     --bm-table-header-text: var(--bm-accent);
     --bm-table-header-line: var(--bm-accent);
     --bm-table-border: var(--bm-accent-2);
-    --bm-table-row-alt: var(--bm-accent-2);
+    --bm-table-row-alt: color-mix(in srgb, var(--bm-accent-2) 18%, transparent);
+    --bm-table-row-line: color-mix(in srgb, var(--bm-accent-2) 60%, transparent);
 
     --bm-hr-start: var(--bm-accent);
     --bm-hr-end: var(--bm-accent-2);
@@ -626,23 +629,23 @@
 
     --bm-footnote: var(--bm-accent);
 
-    --bm-copy-bg: #000;
+    --bm-copy-bg: color-mix(in srgb, #000 50%, transparent);
     --bm-copy-border: var(--bm-accent-2);
     --bm-copy-icon: var(--bm-accent);
 
-    --bm-mermaid-bg: #000;
+    --bm-mermaid-bg: color-mix(in srgb, #000 50%, transparent);
     --bm-mermaid-border: var(--bm-accent-2);
 }
 
 /* Headings: one color per level (h1 and h2 also tint their underline) */
 .bm-themed .bm-heading-1 {
     color: var(--bm-h-1);
-    border-bottom-color: color-mix(in srgb, var(--bm-h-1) 40%, transparent);
+    border-bottom-color: var(--bm-h-line);
 }
 
 .bm-themed .bm-heading-2 {
     color: var(--bm-h-2);
-    border-bottom-color: color-mix(in srgb, var(--bm-h-2) 40%, transparent);
+    border-bottom-color: var(--bm-h-line);
 }
 
 .bm-themed .bm-heading-3 { color: var(--bm-h-3); }
@@ -652,7 +655,7 @@
 
 /* Blockquotes (border colors per level come from --bm-bq-1..6, see Blockquote.tsx) */
 .bm-themed .bm-blockquote {
-    background: color-mix(in srgb, var(--bm-bq-bg) 20%, transparent);
+    background: var(--bm-bq-bg);
     border-radius: 0 6px 6px 0;
 }
 
@@ -663,17 +666,17 @@
 }
 
 .bm-themed .bm-table-th {
-    background: color-mix(in srgb, var(--bm-table-header-bg) 50%, transparent);
+    background: var(--bm-table-header-bg);
     color: var(--bm-table-header-text);
     border-bottom: 2px solid var(--bm-table-header-line);
 }
 
 .bm-themed .bm-table-td {
-    border-bottom-color: color-mix(in srgb, var(--bm-table-border) 60%, transparent);
+    border-bottom-color: var(--bm-table-row-line);
 }
 
 .bm-themed .bm-table-row-alt {
-    background: color-mix(in srgb, var(--bm-table-row-alt) 18%, transparent);
+    background: var(--bm-table-row-alt);
 }
 
 .bm-themed .bm-table tbody tr:hover {
@@ -716,7 +719,7 @@
 
 /* Code block copy button */
 .bm-themed .bm-cb-btn {
-    background: color-mix(in srgb, var(--bm-copy-bg) 50%, transparent);
+    background: var(--bm-copy-bg);
     border-color: var(--bm-copy-border);
     color: var(--bm-copy-icon);
 }
@@ -738,7 +741,7 @@
 
 /* Mermaid frame (the diagram itself is colored by Mermaid's config) */
 .bm-themed .bm-mermaid-wrapper {
-    background: color-mix(in srgb, var(--bm-mermaid-bg) 50%, transparent);
+    background: var(--bm-mermaid-bg);
     border: 1px solid var(--bm-mermaid-border);
 }
 
@@ -817,7 +820,7 @@
 
 .bm-editor-row {
     display: grid;
-    grid-template-columns: 1fr 32px 78px 24px;
+    grid-template-columns: 1fr 32px 92px 24px;
     align-items: center;
     gap: 6px;
     padding: 3px 0;

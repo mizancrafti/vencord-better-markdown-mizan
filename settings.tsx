@@ -9,7 +9,7 @@ import { definePluginSettings } from "@api/Settings";
 import { OptionType } from "@utils/types";
 
 import { ThemeEditor } from "./components/ThemeEditor";
-import { type CustomColors, DEFAULT_COLORS } from "./theme";
+import type { CustomColors } from "./theme";
 
 export const settings = definePluginSettings({
     enableTables: {
@@ -78,12 +78,13 @@ export const settings = definePluginSettings({
         ],
         restartNeeded: false,
     },
-    // Colors of the "Custom" theme (no UI of its own: edited in the panel below)
+    // Colors of the "Custom" theme that differ from the defaults (no UI of its
+    // own: edited in the panel below)
     customColors: {
         type: OptionType.CUSTOM,
-        default: { ...DEFAULT_COLORS } as CustomColors,
+        default: {} as CustomColors,
     },
-    // Color editor + live preview, only visible when the theme is "Custom"
+    // Live preview of the selected theme; with "Custom" it also has the color editor
     themeEditor: {
         type: OptionType.COMPONENT,
         component: () => <ThemeEditor />,
