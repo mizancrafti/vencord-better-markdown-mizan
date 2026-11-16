@@ -103,6 +103,11 @@ function findCodeBlockRanges(lines: string[], unwrapTables: boolean): LineRange[
     let blockHasLang = false;
 
     for (let i = 0; i < lines.length; i++) {
+        // Fences inside NESTED blockquotes (> > ```bash) belong to the
+        // blockquote, which renders them as code blocks itself (Blockquote.tsx).
+        // Claiming them here would split the quote in two.
+        if (!inBlock && /^\s*>\s*>/.test(lines[i])) continue;
+
         // Count fences anywhere on the line (Discord also accepts "text ```js")
         const fenceCount = (lines[i].match(/```/g) || []).length;
         if (fenceCount === 0) continue;

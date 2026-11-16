@@ -8,10 +8,10 @@ A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown re
 |---|---|---|
 | **GFM Tables** | `\| h1 \| h2 \|` | Full table rendering with alignment. Tables split across several messages get their header back from the previous messages |
 | **Task Lists** | `- [x] Done` | Read-only checkboxes for todo items |
-| **Headings** | `# H1` – `###### H6` | Proper visual hierarchy (Discord renders all as bold). Also work inside nested blockquotes |
+| **Headings** | `# H1` – `###### H6` | Discord natively renders only `#`–`###`; the plugin adds `####`–`######` and a consistent look for all six levels. Also work inside nested blockquotes |
 | **Horizontal Rules** | `---`, `***`, `___` | Styled divider lines |
 | **Footnotes** | `[^1]` + `[^1]: text` | Superscript references with click-to-scroll definitions |
-| **Nested Blockquotes** | `> > > text` | Depth-colored borders (blurple → green → yellow → red). Headings, `-#` subtext and code blocks work inside them |
+| **Nested Blockquotes** | `> > > text` | Depth-colored borders, one color per level (gray → blurple → green → yellow → red → light blurple). Headings, `-#` subtext and code blocks work inside them |
 | **Mermaid Diagrams** | `` ```mermaid `` | Flowcharts, sequence diagrams, etc. via CDN |
 | **KaTeX Math** | `$E=mc^2$`, `$$...$$` | LaTeX math rendering via CDN |
 | **Subtext** | `-# small text` | Discord's small, muted text — also inside nested blockquotes and enhanced messages |
@@ -23,18 +23,18 @@ A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown re
 ### Tables, Task Lists, Headings, Mermaid Flowchart, HR, Mixed Content
 ![Showcase 1](screenshots/showcase-1.png)
 
-### Large Table (8×8), Sequence Diagram, Architecture Diagram
+### Large Table (7×8), Sequence Diagram, Architecture Diagram, Color Swatches
 ![Showcase 2](screenshots/showcase-2.png)
 
 ## How It Works
 
 BetterMarkdown uses Vencord's `renderMessageAccessory` API to render enhanced content as a message accessory, and hides the original text with CSS:
 
-1. Checks raw message text for GFM/enhanced patterns (fast regex gate). Code blocks are ignored by the gate, so a `# comment` or a `|` inside a ```` ```bash ```` block never triggers anything
+1. Checks raw message text for GFM/enhanced patterns (fast regex gate). Code blocks are ignored by the gate (a `# comment` or a `|` inside a ```` ```bash ```` block never triggers anything), except plain ```` ``` ```` blocks that contain a table
 2. If patterns found → parses into typed blocks, renders with React components
 3. Renders a per-message `<style>` rule next to the content: `#message-content-<id> { display: none }`. It is scoped by id on purpose: a generic "hide any `message-content-*` inside a message with enhanced content" rule also hid the text of messages that merely *contain* another rendered message (e.g. the MessageLinkEmbeds plugin)
 4. Moves the enhanced block to the top of the accessories container (`order: -1`), so attachments, embeds and stickers stay *below* the text, like in the original message
-5. If no patterns → does nothing (**zero overhead**)
+5. If no patterns → does nothing (only the detection pass runs)
 
 **Code blocks:** every ```` ``` ```` block is handed to Discord's own markdown renderer, so it looks and highlights like a native one. Because the plugin's blocks are drawn outside the element where Discord draws its own, they would miss the theme's styling (they came out black and full width), so the plugin reads the real look from the original message — which Discord still renders, hidden: the width of the native block, its background, border, padding and font — and applies it to its own blocks. This follows any theme and keeps working if Discord renames its CSS classes. The native copy button doesn't work outside Discord's message renderer, so it is hidden and replaced by a working one (copies only the code, without the fences). Blocks inside nested blockquotes and blocks with text before the fence on the same line (`text: ```bash`) are supported too. The only exceptions: ```` ```mermaid ```` blocks become diagrams, and **plain** ```` ``` ```` blocks (no language tag) that contain a **table** are unwrapped and rendered as a table.
 
@@ -101,7 +101,7 @@ Then restart Vesktop (Cmd+Q → reopen).
 
 ## Settings
 
-All features can be individually toggled in **Vencord Settings → Plugins → BetterMarkdown** (no restart required):
+Most features can be toggled individually in **Vencord Settings → Plugins → BetterMarkdown** (no restart required). Subtext and code blocks are always on:
 
 - **Enable Tables** — GFM table rendering (default: on)
 - **Enable Task Lists** — Checkbox rendering (default: on)
@@ -235,11 +235,12 @@ Message ──→ renderMessageAccessory(props)
                │ parseMessage(text, flags) → ParsedBlock[]
                │   │
                │   ▼
-               │ EnhancedMarkdownAccessory (React)
+               │ EnhancedContent (React, re-renders live when the theme changes)
                │   ├── Table / TaskList / Heading / Hr
                │   ├── Footnote / Blockquote
                │   ├── Math (KaTeX CDN) / Mermaid (CDN)
-               │   └── Text blocks via renderInline()
+               │   ├── CodeBlock (Discord's renderer + copy button)
+               │   └── Text blocks via renderInline() (+ subtext, color swatches)
                │   │
                │   ▼
                │ per-message <style>:
@@ -254,7 +255,7 @@ Message ──→ renderMessageAccessory(props)
 
 - **Detection is O(n)** on message length — simple regex tests
 - **Parsing only runs** when GFM patterns are detected
-- Messages without GFM syntax have zero overhead
+- Messages without GFM syntax only pay for the detection pass
 - KaTeX is preloaded at plugin start; Mermaid is lazy-loaded on first use
 
 ### Dependencies
@@ -265,7 +266,7 @@ Message ──→ renderMessageAccessory(props)
 
 ### Styling
 
-All CSS uses Discord's custom properties for native look-and-feel:
+The Discord Dark, Light and GitHub themes use Discord's custom properties for a native look-and-feel (the Neutron and Custom themes use the plugin's own `--bm-*` variables, see Themes):
 - `--background-secondary`, `--background-tertiary`
 - `--text-normal`, `--text-muted`
 - `--interactive-active`, `--brand-500`
@@ -278,14 +279,19 @@ Class prefix: `bm-` (e.g. `bm-table`, `bm-heading-2`)
 - Code blocks are left to Discord's renderer; only plain `` ``` `` blocks (no language) containing a table are unwrapped. A table inside `` ```md `` stays as code
 - Standard tables require the separator row (`|---|---|`)
 - Tables split across messages: the header is only found in previous messages by the same author (up to 20 back, and they must be loaded). Otherwise the fragment renders as a headerless table. A row cut in half between two messages isn't joined
-- Messages with hex colors are re-rendered by the plugin (like messages with tables), so some details may differ slightly from Discord's native rendering
+- Messages with hex colors are re-rendered by the plugin (like messages with tables), so some details may differ slightly from Discord's native rendering. A word like `#bed` counts as a color (3-digit values only need one letter a–f)
+- Subtext (`-#`) is only recognized at the start of a line
 - The copy button replaces Discord's native one by hiding any element inside a code block whose class contains `copy` or `codeActions`; if Discord renames those classes, both buttons may show
+- The width and look of the plugin's code blocks are read from the original message, which is shown for an instant (no paint) to measure it. If Discord changes the ids `message-content-*` / `message-accessories-*`, the blocks fall back to a generic look
+- Finding the header of a split table relies on Discord's message store, located by its `getMessages` / `getMessage` functions; a Discord update can break that (the fragments then render headerless)
+- The Custom theme editor needs a recent Vencord (`OptionType.COMPONENT` / `CUSTOM` and `settings.use`). The live preview of the Light and GitHub themes is drawn over your current Discord background
 - Mermaid and KaTeX require internet access for CDN loading
 
 ### Graceful Degradation
 
 - If a parser fails, the original content is preserved (try/catch)
 - If the per-message hide rule doesn't match, both original and enhanced content show
+- If the original message can't be found, code blocks use a generic look instead of the theme's
 - If CDN loading fails, math/diagrams render as raw text
 
 ## License

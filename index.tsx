@@ -8,7 +8,8 @@
  * Architecture: MessageAccessory + CSS content hiding.
  * Uses Vencord's renderMessageAccessory API to render enhanced
  * components. The original message content is hidden by a per-message
- * CSS rule — no raw DOM manipulation or webpack patches needed.
+ * CSS rule — no webpack patches needed. The only DOM access is reading the
+ * look of Discord's native code blocks (components/nativeCodeStyle.ts).
  */
 
 import definePlugin from "@utils/types";
