@@ -497,6 +497,10 @@
 .bm-code-block {
     position: relative;
     margin: 4px 0;
+    /* The wrapper carries Discord's markup class, which keeps line breaks: a
+     * stray "\n" would show as an empty line under the block. The <pre> inside
+     * sets its own white-space, so the code itself is not affected. */
+    white-space: normal;
 }
 
 /* Hide Discord's native copy button (it doesn't work outside its own message

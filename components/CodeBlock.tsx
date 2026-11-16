@@ -67,6 +67,21 @@ function extractCode(raw: string): string {
     return out.join("\n\n");
 }
 
+/**
+ * Discord's block-level parser can leave blank text nodes (a trailing "\n")
+ * around the code block. Inside the message markup (which keeps line breaks)
+ * that shows up as an empty line under the block, so drop them.
+ */
+export function trimBlankNodes(nodes: React.ReactNode): React.ReactNode {
+    if (!Array.isArray(nodes)) return nodes;
+    const isBlank = (n: React.ReactNode) => n == null || n === false || (typeof n === "string" && n.trim() === "");
+    let start = 0;
+    let end = nodes.length;
+    while (start < end && isBlank(nodes[start])) start++;
+    while (end > start && isBlank(nodes[end - 1])) end--;
+    return nodes.slice(start, end);
+}
+
 async function copyText(text: string): Promise<boolean> {
     try {
         const native = (window as any).DiscordNative?.clipboard;
@@ -135,7 +150,7 @@ export function CodeBlock({ raw }: { raw: string; }) {
     let rendered: React.ReactNode = null;
     try {
         // inline = false → block-level rules (code blocks) are enabled
-        rendered = Parser.parse(raw, false);
+        rendered = trimBlankNodes(Parser.parse(raw, false));
     } catch {
         rendered = <pre><code>{raw}</code></pre>;
     }
