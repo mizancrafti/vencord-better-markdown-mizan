@@ -20,6 +20,7 @@ A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown re
 
 ## Screenshots
 
+used the theme preset `neutron / jaya abadi' for this example with my theme made using a theme editor tool that didn't require css manual programing
 ![Showcase 1](screenshots/showcase-1.png)
 ![Showcase 2](screenshots/showcase-2.png)
 ![Showcase 3](screenshots/showcase-3.png)
