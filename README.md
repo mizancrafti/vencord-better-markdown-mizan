@@ -20,11 +20,10 @@ A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown re
 
 ## Screenshots
 
-### Tables, Task Lists, Headings, Mermaid Flowchart, HR, Mixed Content
 ![Showcase 1](screenshots/showcase-1.png)
-
-### Large Table (7×8), Sequence Diagram, Architecture Diagram, Color Swatches
 ![Showcase 2](screenshots/showcase-2.png)
+![Showcase 3](screenshots/showcase-3.png)
+![Showcase 4](screenshots/showcase-4.png)
 
 ## How It Works
 
