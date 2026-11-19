@@ -503,10 +503,10 @@
     white-space: normal;
 }
 
-/* Hide Discord's native copy button (it doesn't work outside its own message
- * renderer); ours is the .bm-cb-btn below. */
-.bm-code-block [class*="copy" i]:not(.bm-cb-btn),
-.bm-code-block [class*="codeActions" i] {
+/* Only when the plugin's own copy button is selected (Settings → Copy button):
+ * hide Discord's native one; ours is the .bm-cb-btn below. */
+.bm-code-block[data-bm-own-copy] [class*="copy" i]:not(.bm-cb-btn),
+.bm-code-block[data-bm-own-copy] [class*="codeActions" i] {
     display: none !important;
 }
 

@@ -12,7 +12,8 @@
 import { findByPropsLazy } from "@webpack";
 import { Parser, useEffect, useRef, useState } from "@webpack/common";
 
-import { type NativeCodeStyle, readNativeCodeStyle, sameNativeStyle } from "./nativeCodeStyle";
+import { settings } from "../settings";
+import { anchorOffset, type ButtonAnchor, type NativeCodeStyle, readNativeCodeStyle, sameAnchor, sameNativeStyle } from "./nativeCodeStyle";
 
 // The CSS module that has both "markup" and "codeActions" is the one that
 // styles code blocks; plain "markup" is only a fallback.
@@ -115,7 +116,10 @@ const FailIcon = () => (
 );
 
 export function CodeBlock({ raw }: { raw: string; }) {
+    // "native" = the copy button Discord draws inside the block; "own" = ours
+    const ownButton = settings.use(["copyButton"]).copyButton === "own";
     const [status, setStatus] = useState<"idle" | "ok" | "fail">("idle");
+    const [anchor, setAnchor] = useState<ButtonAnchor | null>(null);
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const wrapper = useRef<HTMLDivElement>(null);
     const [native, setNative] = useState<NativeCodeStyle | null>(null);
@@ -127,12 +131,19 @@ export function CodeBlock({ raw }: { raw: string; }) {
         if (!el) return;
 
         let last: NativeCodeStyle | null = null;
+        let lastAnchor: ButtonAnchor | null = null;
         const sync = () => {
             try {
                 const next = readNativeCodeStyle(el);
                 if (!sameNativeStyle(last, next)) {
                     last = next;
                     setNative(next);
+                }
+                // The own button follows the corner of the code box
+                const nextAnchor = ownButton ? anchorOffset(el) : null;
+                if (!sameAnchor(lastAnchor, nextAnchor)) {
+                    lastAnchor = nextAnchor;
+                    setAnchor(nextAnchor);
                 }
             } catch {
                 // Keep the fallback look
@@ -144,8 +155,10 @@ export function CodeBlock({ raw }: { raw: string; }) {
         if (!container || typeof ResizeObserver === "undefined") return;
         const observer = new ResizeObserver(sync);
         observer.observe(container);
+        const pre = el.querySelector("pre");
+        if (pre) observer.observe(pre);
         return () => observer.disconnect();
-    }, [raw]);
+    }, [raw, ownButton]);
 
     let rendered: React.ReactNode = null;
     try {
@@ -170,6 +183,7 @@ export function CodeBlock({ raw }: { raw: string; }) {
             ref={wrapper}
             className={`bm-code-block ${native?.className || getMarkupClass()}`.trim()}
             data-bm-synced={native && Object.keys(native.vars).length ? "" : undefined}
+            data-bm-own-copy={ownButton ? "" : undefined}
             style={native ? {
                 ...native.vars,
                 width: native.width ? `${native.width}px` : undefined,
@@ -177,15 +191,16 @@ export function CodeBlock({ raw }: { raw: string; }) {
             } as React.CSSProperties : undefined}
         >
             {rendered}
-            <button
+            {ownButton && <button
                 type="button"
                 className={`bm-cb-btn${status === "ok" ? " bm-cb-btn-done" : status === "fail" ? " bm-cb-btn-fail" : ""}`}
                 onClick={handleCopy}
                 aria-label="Copy code"
                 title={status === "ok" ? "Copied!" : status === "fail" ? "Failed to copy" : "Copy code"}
+                style={anchor ? { top: anchor.top, right: anchor.right } : undefined}
             >
                 {status === "ok" ? <CheckIcon /> : status === "fail" ? <FailIcon /> : <CopyIcon />}
-            </button>
+            </button>}
         </div>
     );
 }
