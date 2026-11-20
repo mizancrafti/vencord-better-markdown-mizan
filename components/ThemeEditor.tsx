@@ -58,7 +58,7 @@ const PREVIEW_MARKDOWN = [
     "[^1]: The footnote definition",
     "",
     "```js",
-    "console.log(\"copy button on hover\");",
+    "console.log(\"hello\");",
     "```",
     "",
     "```mermaid",

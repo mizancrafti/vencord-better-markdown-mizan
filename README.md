@@ -1,6 +1,6 @@
 # BetterMarkdown
 
-A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown rendering with full GitHub Flavored Markdown (GFM) support, Mermaid diagrams, KaTeX math formulas, and a few extras (`-#` subtext, color swatches, native-looking code blocks with a copy button).
+A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown rendering with full GitHub Flavored Markdown (GFM) support, Mermaid diagrams, KaTeX math formulas, and a few extras (`-#` subtext, color swatches, native-looking code blocks).
 
 ## Features
 
@@ -15,7 +15,7 @@ A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown re
 | **Mermaid Diagrams** | `` ```mermaid `` | Flowcharts, sequence diagrams, etc. via CDN |
 | **KaTeX Math** | `$E=mc^2$`, `$$...$$` | LaTeX math rendering via CDN |
 | **Subtext** | `-# small text` | Discord's small, muted text — also inside nested blockquotes and enhanced messages |
-| **Code blocks** | `` ```bash `` | Rendered by Discord's own renderer (highlighting, same look) with a copy button: Discord's native one (default) or the plugin's own, selectable in the settings |
+| **Code blocks** | `` ```bash `` | Rendered by Discord's own renderer (highlighting, same look) and Discord's own copy button |
 | **Color swatches** | `#F7F6F3` | A small filled square next to every hex color (`#RGB`, `#RRGGBB`, `#RRGGBBAA`) |
 
 ## Screenshots
@@ -37,7 +37,7 @@ BetterMarkdown uses Vencord's `renderMessageAccessory` API to render enhanced co
 4. Moves the enhanced block to the top of the accessories container (`order: -1`), so attachments, embeds and stickers stay *below* the text, like in the original message
 5. If no patterns → does nothing (only the detection pass runs)
 
-**Code blocks:** every ```` ``` ```` block is handed to Discord's own markdown renderer, so it looks and highlights like a native one. Because the plugin's blocks are drawn outside the element where Discord draws its own, they would miss the theme's styling (they came out black and full width), so the plugin reads the real look from the original message — which Discord still renders, hidden: the width of the native block, its background, border, padding and font — and applies it to its own blocks. This follows any theme and keeps working if Discord renames its CSS classes. **Copy button** (setting *Copy button*): by default the plugin shows the button Discord itself puts inside the block. That button is wired by Discord's message renderer, so for blocks drawn by the plugin it may not work or may sit in the wrong place; if so, switch to **Plugin's own button**, which hides Discord's one and adds a working button (copies only the code, without the fences) anchored to the top-right corner of the code box. Blocks inside nested blockquotes and blocks with text before the fence on the same line (`text: ```bash`) are supported too. The only exceptions: ```` ```mermaid ```` blocks become diagrams, and **plain** ```` ``` ```` blocks (no language tag) that contain a **table** are unwrapped and rendered as a table.
+**Code blocks:** every ```` ``` ```` block is handed to Discord's own markdown renderer, so it looks and highlights like a native one. Because the plugin's blocks are drawn outside the element where Discord draws its own, they would miss the theme's styling (they came out black and full width), so the plugin reads the real look from the original message — which Discord still renders, hidden: the width of the native block, its background, border, padding and font — and applies it to its own blocks. This follows any theme and keeps working if Discord renames its CSS classes. The copy button is Discord's own: it comes with the block that Discord's renderer draws. Blocks inside nested blockquotes and blocks with text before the fence on the same line (`text: ```bash`) are supported too. The only exceptions: ```` ```mermaid ```` blocks become diagrams, and **plain** ```` ``` ```` blocks (no language tag) that contain a **table** are unwrapped and rendered as a table.
 
 **Tables split across messages:** a message that starts with table rows but has no header of its own is treated as a continuation. The plugin looks at the previous messages by the same author (up to 20), finds the last table header + separator, and puts it in front, so the continuation renders as a normal table (with the original column names and alignment) instead of a headerless one.
 
@@ -79,7 +79,7 @@ src/userplugins/
         ├── Blockquote.tsx
         ├── Math.tsx       # KaTeX inline + block rendering
         ├── Mermaid.tsx    # Mermaid diagram rendering
-        ├── CodeBlock.tsx  # Code blocks via Discord's parser + copy button
+        ├── CodeBlock.tsx  # Code blocks via Discord's parser
         ├── nativeCodeStyle.ts  # Reads width/look of Discord's native code block
         ├── Enhanced.tsx   # renderBlock() + EnhancedContent wrapper (live theme)
         ├── ThemeEditor.tsx  # Custom theme color editor + live preview
@@ -113,16 +113,15 @@ Most features can be toggled individually in **Vencord Settings → Plugins → 
 - **Enable Math** — KaTeX formula rendering (default: on)
 - **Enable Mermaid** — Diagram rendering (default: on)
 - **Enable Color Swatches** — Color square next to hex colors (default: on)
-- **Copy button** — Discord's native button on code blocks (default) or the plugin's own
 - **Theme** — Discord Dark (default), Discord Light, GitHub, Neutron / Jaya Abadi, or Custom (see below)
 
 ### Themes
 
 - **Discord Dark / Light / GitHub** — fixed looks built on Discord's own CSS variables.
 - **Neutron / Jaya Abadi (mizan's theme)** — takes its colors from the variables of the Neutron Discord theme (`--themeColor1`, `--themeColor2`), so the plugin matches that theme. Mermaid diagrams are recolored too.
-- **Custom** — pick "Custom" and an editor appears under the theme dropdown: a color picker + hex field for every element (the 6 heading levels, the 6 blockquote levels and background, table header/borders/rows, divider, task checkbox, footnote links, copy button, and the Mermaid diagram frame/nodes/lines/text). Hex fields accept `#rrggbb` or `#rrggbbaa` (the last two digits are the transparency, `00` = invisible). Each field has a reset button, plus "Reset all". The defaults reproduce **Discord Dark**, so you start from the normal look and change only what you want; only the colors you change are saved.
+- **Custom** — pick "Custom" and an editor appears under the theme dropdown: a color picker + hex field for every element (the 6 heading levels, the 6 blockquote levels and background, table header/borders/rows, divider, task checkbox, footnote links, and the Mermaid diagram frame/nodes/lines/text). Hex fields accept `#rrggbb` or `#rrggbbaa` (the last two digits are the transparency, `00` = invisible). Each field has a reset button, plus "Reset all". The defaults reproduce **Discord Dark**, so you start from the normal look and change only what you want; only the colors you change are saved.
 
-**Live preview:** with *every* theme, a preview under the dropdown shows a sample of each element (headings 1–6, nested quotes, table, divider, tasks, footnote, subtext, color swatch, code block with copy button, Mermaid diagram). With Custom it updates as you change colors, and the visible messages in the chat update too. With the other themes it's just a preview (the colors can't be edited).
+**Live preview:** with *every* theme, a preview under the dropdown shows a sample of each element (headings 1–6, nested quotes, table, divider, tasks, footnote, subtext, color swatch, code block, Mermaid diagram). With Custom it updates as you change colors, and the visible messages in the chat update too. With the other themes it's just a preview (the colors can't be edited).
 
 Neutron and Custom share the same `--bm-*` CSS variables (see the end of `style.css`), so adding a new variable-driven theme only means defining those variables.
 
@@ -241,7 +240,7 @@ Message ──→ renderMessageAccessory(props)
                │   ├── Table / TaskList / Heading / Hr
                │   ├── Footnote / Blockquote
                │   ├── Math (KaTeX CDN) / Mermaid (CDN)
-               │   ├── CodeBlock (Discord's renderer + copy button)
+               │   ├── CodeBlock (Discord's renderer)
                │   └── Text blocks via renderInline() (+ subtext, color swatches)
                │   │
                │   ▼
@@ -283,7 +282,6 @@ Class prefix: `bm-` (e.g. `bm-table`, `bm-heading-2`)
 - Tables split across messages: the header is only found in previous messages by the same author (up to 20 back, and they must be loaded). Otherwise the fragment renders as a headerless table. A row cut in half between two messages isn't joined
 - Messages with hex colors are re-rendered by the plugin (like messages with tables), so some details may differ slightly from Discord's native rendering. A word like `#bed` counts as a color (3-digit values only need one letter a–f)
 - Subtext (`-#`) is only recognized at the start of a line
-- Discord's native copy button is wired by its message renderer and may not work, or may be misplaced, on blocks drawn by the plugin. The plugin's own button is the alternative; it hides Discord's one by hiding any element inside the block whose class contains `copy` or `codeActions`, so if Discord renames those classes, both buttons may show
 - The width and look of the plugin's code blocks are read from the original message, which is shown for an instant (no paint) to measure it. If Discord changes the ids `message-content-*` / `message-accessories-*`, the blocks fall back to a generic look
 - Finding the header of a split table relies on Discord's message store, located by its `getMessages` / `getMessage` functions; a Discord update can break that (the fragments then render headerless)
 - The Custom theme editor needs a recent Vencord (`OptionType.COMPONENT` / `CUSTOM` and `settings.use`). The live preview of the Light and GitHub themes is drawn over your current Discord background

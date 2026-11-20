@@ -79,30 +79,3 @@ export function readNativeCodeStyle(el: HTMLElement): NativeCodeStyle | null {
 export function sameNativeStyle(a: NativeCodeStyle | null, b: NativeCodeStyle | null): boolean {
     return JSON.stringify(a) === JSON.stringify(b);
 }
-
-export interface ButtonAnchor {
-    top: number;
-    right: number;
-}
-
-/**
- * Where to put the plugin's own copy button so it sits inside the top-right
- * corner of the first code box. The wrapper can be wider than the box (the
- * box has its own max-width), and a button anchored to the wrapper would end
- * up outside of it.
- */
-export function anchorOffset(wrapper: HTMLElement, insetTop = 6, insetRight = 8): ButtonAnchor | null {
-    const pre = wrapper.querySelector("pre");
-    if (!pre) return null;
-    const w = wrapper.getBoundingClientRect();
-    const p = pre.getBoundingClientRect();
-    if (p.width === 0 && p.height === 0) return null; // not laid out
-    return {
-        top: Math.round(p.top - w.top + insetTop),
-        right: Math.round(w.right - p.right + insetRight),
-    };
-}
-
-export function sameAnchor(a: ButtonAnchor | null, b: ButtonAnchor | null): boolean {
-    return a?.top === b?.top && a?.right === b?.right;
-}

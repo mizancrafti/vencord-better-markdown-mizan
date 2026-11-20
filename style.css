@@ -503,54 +503,6 @@
     white-space: normal;
 }
 
-/* Only when the plugin's own copy button is selected (Settings → Copy button):
- * hide Discord's native one; ours is the .bm-cb-btn below. */
-.bm-code-block[data-bm-own-copy] [class*="copy" i]:not(.bm-cb-btn),
-.bm-code-block[data-bm-own-copy] [class*="codeActions" i] {
-    display: none !important;
-}
-
-/* Our copy button: top-right corner, shown on hover */
-.bm-cb-btn {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-    border-radius: 4px;
-    background: var(--background-secondary, rgba(0, 0, 0, 0.5));
-    color: var(--interactive-normal, #b5bac1);
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s, color 0.15s, background 0.15s;
-}
-
-.bm-code-block:hover .bm-cb-btn,
-.bm-cb-btn:focus-visible {
-    opacity: 1;
-}
-
-.bm-cb-btn:hover {
-    color: var(--interactive-hover, #fff);
-    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.1));
-}
-
-.bm-cb-btn-done,
-.bm-cb-btn-done:hover {
-    color: var(--status-positive, #23a55a);
-}
-
-.bm-cb-btn-fail,
-.bm-cb-btn-fail:hover {
-    color: var(--status-danger, #f23f43);
-}
-
 :where(.bm-code-block pre) {
     margin: 0;
     max-width: 100%;
@@ -632,10 +584,6 @@
     --bm-task-mark: var(--backgroundColor, #01112A);
 
     --bm-footnote: var(--bm-accent);
-
-    --bm-copy-bg: color-mix(in srgb, #000 50%, transparent);
-    --bm-copy-border: var(--bm-accent-2);
-    --bm-copy-icon: var(--bm-accent);
 
     --bm-mermaid-bg: color-mix(in srgb, #000 50%, transparent);
     --bm-mermaid-border: var(--bm-accent-2);
@@ -719,28 +667,6 @@
 
 .bm-themed .bm-footnote-link:hover {
     color: color-mix(in srgb, var(--bm-footnote) 70%, white);
-}
-
-/* Code block copy button */
-.bm-themed .bm-cb-btn {
-    background: var(--bm-copy-bg);
-    border-color: var(--bm-copy-border);
-    color: var(--bm-copy-icon);
-}
-
-.bm-themed .bm-cb-btn:hover {
-    border-color: var(--bm-copy-icon);
-    color: color-mix(in srgb, var(--bm-copy-icon) 70%, white);
-}
-
-.bm-themed .bm-cb-btn.bm-cb-btn-done,
-.bm-themed .bm-cb-btn.bm-cb-btn-done:hover {
-    color: var(--status-positive, #23a55a);
-}
-
-.bm-themed .bm-cb-btn.bm-cb-btn-fail,
-.bm-themed .bm-cb-btn.bm-cb-btn-fail:hover {
-    color: var(--status-danger, #f23f43);
 }
 
 /* Mermaid frame (the diagram itself is colored by Mermaid's config) */

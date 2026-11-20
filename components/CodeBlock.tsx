@@ -2,21 +2,19 @@
  * Code Block Component
  *
  * Renders ``` blocks with Discord's own markdown parser (block mode), so they
- * look exactly like native code blocks: syntax highlighting, same styling.
+ * look and behave like native code blocks: syntax highlighting, the same
+ * styling and Discord's own copy button.
  *
- * Discord's native copy button doesn't work outside its own message renderer
- * (it's wired up by the message container, not by the block itself), so we
- * hide it and add our own working one in the top-right corner.
+ * The block is drawn outside the element where Discord draws its native ones,
+ * so its width and look are copied from the original message
+ * (see nativeCodeStyle.ts).
  */
 
 import { findByPropsLazy } from "@webpack";
 import { Parser, useEffect, useRef, useState } from "@webpack/common";
 
-import { settings } from "../settings";
-import { anchorOffset, type ButtonAnchor, type NativeCodeStyle, readNativeCodeStyle, sameAnchor, sameNativeStyle } from "./nativeCodeStyle";
+import { type NativeCodeStyle, readNativeCodeStyle, sameNativeStyle } from "./nativeCodeStyle";
 
-// The CSS module that has both "markup" and "codeActions" is the one that
-// styles code blocks; plain "markup" is only a fallback.
 const MarkupClasses = findByPropsLazy("markup");
 let markupClass: string | null = null;
 
@@ -30,42 +28,6 @@ function getMarkupClass(): string {
         markupClass = "";
     }
     return markupClass as string;
-}
-
-/**
- * Pull the code out of the raw ``` fences (language tag and fences removed).
- * If the range holds several blocks, they're joined with a blank line.
- */
-function extractCode(raw: string): string {
-    const out: string[] = [];
-    let inBlock = false;
-    let current: string[] = [];
-
-    for (const line of raw.split("\n")) {
-        const idx = line.indexOf("```");
-        if (!inBlock) {
-            if (idx === -1) continue; // text outside the block
-            const end = line.indexOf("```", idx + 3);
-            if (end !== -1) {
-                // Single-line block: ```text```
-                out.push(line.slice(idx + 3, end).trim());
-                continue;
-            }
-            inBlock = true;
-            current = [];
-        } else if (idx !== -1) {
-            // Closing fence (keep anything written before it on the same line)
-            const before = line.slice(0, idx);
-            if (before.trim()) current.push(before);
-            out.push(current.join("\n"));
-            inBlock = false;
-        } else {
-            current.push(line);
-        }
-    }
-    if (inBlock) out.push(current.join("\n")); // unclosed block
-
-    return out.join("\n\n");
 }
 
 /**
@@ -83,44 +45,7 @@ export function trimBlankNodes(nodes: React.ReactNode): React.ReactNode {
     return nodes.slice(start, end);
 }
 
-async function copyText(text: string): Promise<boolean> {
-    try {
-        const native = (window as any).DiscordNative?.clipboard;
-        if (native?.copy) {
-            native.copy(text);
-            return true;
-        }
-        await navigator.clipboard.writeText(text);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-const CopyIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" />
-    </svg>
-);
-
-const CheckIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-    </svg>
-);
-
-const FailIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-    </svg>
-);
-
 export function CodeBlock({ raw }: { raw: string; }) {
-    // "native" = the copy button Discord draws inside the block; "own" = ours
-    const ownButton = settings.use(["copyButton"]).copyButton === "own";
-    const [status, setStatus] = useState<"idle" | "ok" | "fail">("idle");
-    const [anchor, setAnchor] = useState<ButtonAnchor | null>(null);
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const wrapper = useRef<HTMLDivElement>(null);
     const [native, setNative] = useState<NativeCodeStyle | null>(null);
 
@@ -131,19 +56,12 @@ export function CodeBlock({ raw }: { raw: string; }) {
         if (!el) return;
 
         let last: NativeCodeStyle | null = null;
-        let lastAnchor: ButtonAnchor | null = null;
         const sync = () => {
             try {
                 const next = readNativeCodeStyle(el);
                 if (!sameNativeStyle(last, next)) {
                     last = next;
                     setNative(next);
-                }
-                // The own button follows the corner of the code box
-                const nextAnchor = ownButton ? anchorOffset(el) : null;
-                if (!sameAnchor(lastAnchor, nextAnchor)) {
-                    lastAnchor = nextAnchor;
-                    setAnchor(nextAnchor);
                 }
             } catch {
                 // Keep the fallback look
@@ -155,10 +73,8 @@ export function CodeBlock({ raw }: { raw: string; }) {
         if (!container || typeof ResizeObserver === "undefined") return;
         const observer = new ResizeObserver(sync);
         observer.observe(container);
-        const pre = el.querySelector("pre");
-        if (pre) observer.observe(pre);
         return () => observer.disconnect();
-    }, [raw, ownButton]);
+    }, [raw]);
 
     let rendered: React.ReactNode = null;
     try {
@@ -168,22 +84,11 @@ export function CodeBlock({ raw }: { raw: string; }) {
         rendered = <pre><code>{raw}</code></pre>;
     }
 
-    async function handleCopy(e: React.MouseEvent) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const ok = await copyText(extractCode(raw));
-        setStatus(ok ? "ok" : "fail");
-        if (timer.current) clearTimeout(timer.current);
-        timer.current = setTimeout(() => setStatus("idle"), 1500);
-    }
-
     return (
         <div
             ref={wrapper}
             className={`bm-code-block ${native?.className || getMarkupClass()}`.trim()}
             data-bm-synced={native && Object.keys(native.vars).length ? "" : undefined}
-            data-bm-own-copy={ownButton ? "" : undefined}
             style={native ? {
                 ...native.vars,
                 width: native.width ? `${native.width}px` : undefined,
@@ -191,16 +96,6 @@ export function CodeBlock({ raw }: { raw: string; }) {
             } as React.CSSProperties : undefined}
         >
             {rendered}
-            {ownButton && <button
-                type="button"
-                className={`bm-cb-btn${status === "ok" ? " bm-cb-btn-done" : status === "fail" ? " bm-cb-btn-fail" : ""}`}
-                onClick={handleCopy}
-                aria-label="Copy code"
-                title={status === "ok" ? "Copied!" : status === "fail" ? "Failed to copy" : "Copy code"}
-                style={anchor ? { top: anchor.top, right: anchor.right } : undefined}
-            >
-                {status === "ok" ? <CheckIcon /> : status === "fail" ? <FailIcon /> : <CopyIcon />}
-            </button>}
         </div>
     );
 }

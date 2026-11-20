@@ -66,15 +66,6 @@ export const settings = definePluginSettings({
         default: true,
         restartNeeded: false,
     },
-    copyButton: {
-        type: OptionType.SELECT,
-        description: "Copy button on code blocks drawn by the plugin",
-        options: [
-            { label: "Discord's native button", value: "native", default: true },
-            { label: "Plugin's own button", value: "own" },
-        ],
-        restartNeeded: false,
-    },
     theme: {
         type: OptionType.SELECT,
         description: "Visual theme for enhanced elements",

@@ -56,9 +56,6 @@ export const COLOR_FIELDS: ColorField[] = [
 
     f("Footnotes", "footnoteLink", "Links", "--bm-footnote", "#5865f2"),
 
-    f("Code blocks (copy button)", "copyBg", "Background", "--bm-copy-bg", "#2b2d31"),
-    f("Code blocks (copy button)", "copyBorder", "Border", "--bm-copy-border", "#ffffff1f"),
-    f("Code blocks (copy button)", "copyIcon", "Icon", "--bm-copy-icon", "#b5bac1"),
 
     // Mermaid defaults are the values of Mermaid's own built-in dark theme
     f("Mermaid diagrams", "mermaidBg", "Background", "--bm-mermaid-bg", "#2b2d31"),
@@ -87,7 +84,7 @@ const LEGACY_DEFAULTS: Record<string, string> = {
     quote1: "#ffa130", quote2: "#a0b4c7", quote3: "#ffc783", quote4: "#2c5882", quote5: "#a6691f", quote6: "#c6d2dd",
     quoteBg: "#000000", tableHeaderBg: "#000000", tableHeaderText: "#ffa130", tableHeaderLine: "#ffa130",
     tableBorder: "#2c5882", tableRowAlt: "#2c5882", hrStart: "#ffa130", hrEnd: "#2c5882",
-    taskChecked: "#ffa130", footnoteLink: "#ffa130", copyBg: "#000000", copyBorder: "#2c5882", copyIcon: "#ffa130",
+    taskChecked: "#ffa130", footnoteLink: "#ffa130",
     mermaidBg: "#000000", mermaidBorder: "#2c5882", mermaidNodeBg: "#264d75", mermaidNodeBorder: "#ffa130",
     mermaidLine: "#ffa130", mermaidText: "#e6edf7", mermaidCluster: "#0e2644",
 };
