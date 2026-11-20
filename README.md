@@ -6,7 +6,7 @@ A [Vencord](https://vencord.dev/) userplugin that enhances Discord's markdown re
 
 | Feature | Syntax | Description |
 |---|---|---|
-| **GFM Tables** | `\| h1 \| h2 \|` | Full table rendering with alignment. Tables split across several messages get their header back from the previous messages |
+| **GFM Tables** | `\| h1 \| h2 \|` | Full table rendering with alignment. Tables posted piece by piece (header, separator and rows in different messages) are completed from the previous messages |
 | **Task Lists** | `- [x] Done` | Read-only checkboxes for todo items |
 | **Headings** | `# H1` – `###### H6` | Discord natively renders only `#`–`###`; the plugin adds `####`–`######` and a consistent look for all six levels. Also work inside nested blockquotes |
 | **Horizontal Rules** | `---`, `***`, `___` | Styled divider lines |
@@ -39,7 +39,11 @@ BetterMarkdown uses Vencord's `renderMessageAccessory` API to render enhanced co
 
 **Code blocks:** every ```` ``` ```` block is handed to Discord's own markdown renderer, so it looks and highlights like a native one. Because the plugin's blocks are drawn outside the element where Discord draws its own, they would miss the theme's styling (they came out black and full width), so the plugin reads the real look from the original message — which Discord still renders, hidden: the width of the native block, its background, border, padding and font — and applies it to its own blocks. This follows any theme and keeps working if Discord renames its CSS classes. The copy button is Discord's own: it comes with the block that Discord's renderer draws. Blocks inside nested blockquotes and blocks with text before the fence on the same line (`text: ```bash`) are supported too. The only exceptions: ```` ```mermaid ```` blocks become diagrams, and **plain** ```` ``` ```` blocks (no language tag) that contain a **table** are unwrapped and rendered as a table.
 
-**Tables split across messages:** a message that starts with table rows but has no header of its own is treated as a continuation. The plugin looks at the previous messages by the same author (up to 20), finds the last table header + separator, and puts it in front, so the continuation renders as a normal table (with the original column names and alignment) instead of a headerless one.
+**Tables split across messages:** tables are often posted in pieces (Discord's 2000 character limit, or just piece by piece). The plugin looks at the previous messages by the same author (up to 20) and completes each piece so it renders as a normal table, with the original column names and alignment:
+- *rows only* → gets the header + separator of the table above;
+- *a header row in one message, its `|---|---|---|` separator (and rows) in the next one* → the second message gets the header row in front;
+- *a message that is only a header row, or a header + separator with no rows* → a header-only table;
+- *separator + rows with no header to be found* (other author, different number of columns...) → the rows as a table without header, keeping the alignment.
 
 Discord's existing markdown (bold, italic, code, spoilers, mentions, emoji) is fully preserved — inline formatting within enhanced blocks uses Discord's own `simple-markdown` parser.
 
@@ -146,6 +150,16 @@ Long tables get cut into several messages (Discord's 2000 character limit). Only
 ```
 
 These continuations are rendered as normal tables: the header and alignment are recovered from the previous message(s) by the same author. If the header can't be found, they render as a headerless table.
+
+A table can also be posted with the header and the separator in different messages:
+
+```
+(message 1)   | Thing 1 | Thing 2 | Thing 3 |
+(message 2)   |:---|:---:|---:|
+              | a | b | c |
+```
+
+Message 1 is a header-only table (a message that is just one row of cells, with at least two columns); message 2 gets the header of message 1 and renders as the whole table. The separator must have the same number of columns as the header and at least three dashes per cell (`|---|---|---|`, `|:---|---:|`...).
 
 A table inside a plain ```` ``` ```` block is rendered as a table too.
 
@@ -279,7 +293,7 @@ Class prefix: `bm-` (e.g. `bm-table`, `bm-heading-2`)
 - Enhanced rendering is client-side only — other users see raw markdown
 - Code blocks are left to Discord's renderer; only plain `` ``` `` blocks (no language) containing a table are unwrapped. A table inside `` ```md `` stays as code
 - Standard tables require the separator row (`|---|---|`)
-- Tables split across messages: the header is only found in previous messages by the same author (up to 20 back, and they must be loaded). Otherwise the fragment renders as a headerless table. A row cut in half between two messages isn't joined
+- Tables split across messages: the header is only found in previous messages by the same author (up to 20 back, and they must be loaded). Otherwise the fragment renders as a headerless table. A header row posted alone is only recognized when it is the **whole** message (a row at the end of a longer message isn't), and when the separator arrives in the next message it must have the same number of columns. A row cut in half between two messages isn't joined
 - Messages with hex colors are re-rendered by the plugin (like messages with tables), so some details may differ slightly from Discord's native rendering. A word like `#bed` counts as a color (3-digit values only need one letter a–f)
 - Subtext (`-#`) is only recognized at the start of a line
 - The width and look of the plugin's code blocks are read from the original message, which is shown for an instant (no paint) to measure it. If Discord changes the ids `message-content-*` / `message-accessories-*`, the blocks fall back to a generic look

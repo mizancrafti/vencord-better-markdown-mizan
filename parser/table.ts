@@ -126,8 +126,8 @@ export function parseTable(lines: string[]): TableData | null {
         rows.push(row);
     }
 
-    if (rows.length === 0) return null;
-
+    // A header + separator with no rows is a valid (header-only) table: it's what
+    // you get when a table is posted piece by piece and the rows come later
     return { headers, rows };
 }
 

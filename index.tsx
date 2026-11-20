@@ -21,43 +21,44 @@ import { cleanup as cleanupKaTeX, loadKaTeX } from "./katex-loader";
 import { cleanup as cleanupMermaid } from "./mermaid-loader";
 import { type FeatureFlags, hasGfmPatterns, parseMessage } from "./parser";
 import { detectHexColor } from "./parser/colors";
-import { isTableContinuation, resolveContinuationHeader } from "./parser/tableContinuation";
+import { completeSplitTable } from "./parser/tableContinuation";
 import { settings } from "./settings";
 
 import "./style.css";
 
 const MessageStore = findByPropsLazy("getMessages", "getMessage");
 
-/**
- * If the message is the continuation of a table split across messages
- * (rows only, no header), prepend the header + separator of the table from
- * the previous messages by the same author, so it renders as a normal table.
- * Returns the content unchanged if it isn't a continuation.
- */
-function withTableContinuation(message: any, flags: FeatureFlags): string {
-    const content: string = message.content;
-    if (!flags.enableTables || !isTableContinuation(content)) return content;
-
+/** Contents of the previous messages by the same author, nearest first (up to 20). */
+function previousContentsBySameAuthor(message: any): string[] {
     try {
         const collection = MessageStore.getMessages(message.channel_id);
         const all: any[] = collection?.toArray?.() ?? collection?._array;
-        if (!Array.isArray(all)) return content;
+        if (!Array.isArray(all)) return [];
 
         const index = all.findIndex(m => m.id === message.id);
-        if (index <= 0) return content;
+        if (index <= 0) return [];
 
-        // Previous messages by the same author, nearest first
         const previous: string[] = [];
         for (let i = index - 1; i >= 0 && previous.length < 20; i--) {
             if (all[i].author?.id !== message.author?.id) break;
             previous.push(all[i].content ?? "");
         }
-
-        const header = resolveContinuationHeader(previous);
-        return header ? `${header[0]}\n${header[1]}\n${content}` : content;
+        return previous;
     } catch {
-        return content;
+        return [];
     }
+}
+
+/**
+ * If the message is a piece of a table posted in several messages (rows only,
+ * a separator that arrives after its header, a lone header row...), complete
+ * it with what the previous messages hold so it renders as a normal table.
+ * Returns the content unchanged if it isn't a piece of a table.
+ */
+function withTableContinuation(message: any, flags: FeatureFlags): string {
+    const content: string = message.content;
+    if (!flags.enableTables) return content;
+    return completeSplitTable(content, () => previousContentsBySameAuthor(message));
 }
 
 function getFeatureFlags(): FeatureFlags {
