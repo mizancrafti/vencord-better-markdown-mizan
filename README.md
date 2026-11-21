@@ -43,9 +43,11 @@ BetterMarkdown uses Vencord's `renderMessageAccessory` API to render enhanced co
 - *rows only* → gets the header + separator of the table above;
 - *a header row in one message, its `|---|---|---|` separator (and rows) in the next one* → the second message gets the header row in front;
 - *a message that is only a header row, or a header + separator with no rows* → a header-only table;
-- *separator + rows with no header to be found* (other author, different number of columns...) → the rows as a table without header, keeping the alignment.
+- *separator + rows with no header to be found* (other author, different number of columns...) → the rows as a table without header, keeping the alignment;
+- *a line cut in the middle between two messages* (the 2000 character limit cuts wherever it falls, even inside a word) → the two halves are joined. It works for the header (`| Off` + `load | Note |` → `Offload`), for the separator (`|-------` + `-|------|`) and for a row, including a last cell that was left empty in the first message and whose text starts the next one. The checks are strict (the joined line must have exactly the number of columns of the table), so ordinary messages are not touched. It also works through a chain of three or more messages.
 
-Discord's existing markdown (bold, italic, code, spoilers, mentions, emoji) is fully preserved — inline formatting within enhanced blocks uses Discord's own `simple-markdown` parser.
+A table is never shown with fewer columns than its data: the number of columns is the widest of the header, the separator and the rows. If a header is incomplete and can't be completed, the extra columns just get an empty header instead of hiding their cells.
+Discord's existing markdown (bold, italic, code, spoilers, mentions, emoji) is fully preserved — inline formatting within enhanced blocks uses Discord's own `simple-markdown` parser. Discord only styles bold, italic, underline and strikethrough inside its own message markup, so the plugin's blocks carry their own rules for them (in headings, which are already bold, `**bold**` gets extra weight to stand out).
 
 ## Installation
 
@@ -160,6 +162,17 @@ A table can also be posted with the header and the separator in different messag
 ```
 
 Message 1 is a header-only table (a message that is just one row of cells, with at least two columns); message 2 gets the header of message 1 and renders as the whole table. The separator must have the same number of columns as the header and at least three dashes per cell (`|---|---|---|`, `|:---|---:|`...).
+
+A line can also be cut in the middle (it happens when a long table goes over the 2000 character limit):
+
+```
+(message 1)   | Model | Size | VRAM | Off
+(message 2)   load | Note |
+              |-------|------|------|---------|------|
+              | Qwen2.5 | 14B | 9 GB | 0 GB | Best |
+```
+
+Message 2 renders as one table with the header `Model | Size | VRAM | Offload | Note`. If the cut falls on a space, Discord trims it, so the two halves are joined without it.
 
 A table inside a plain ```` ``` ```` block is rendered as a table too.
 
@@ -293,7 +306,7 @@ Class prefix: `bm-` (e.g. `bm-table`, `bm-heading-2`)
 - Enhanced rendering is client-side only — other users see raw markdown
 - Code blocks are left to Discord's renderer; only plain `` ``` `` blocks (no language) containing a table are unwrapped. A table inside `` ```md `` stays as code
 - Standard tables require the separator row (`|---|---|`)
-- Tables split across messages: the header is only found in previous messages by the same author (up to 20 back, and they must be loaded). Otherwise the fragment renders as a headerless table. A header row posted alone is only recognized when it is the **whole** message (a row at the end of a longer message isn't), and when the separator arrives in the next message it must have the same number of columns. A row cut in half between two messages isn't joined
+- Tables split across messages: the header is only found in previous messages by the same author (up to 20 back, and they must be loaded). Otherwise the fragment renders as a headerless table. A header row posted alone is only recognized when it is the **whole** message (a row at the end of a longer message isn't), and when the separator arrives in the next message it must have the same number of columns. A line cut between two messages is only joined when the result has exactly the number of columns of the table, and when the cut falls on a space Discord has already removed it (`Offload a RAM` cut after `Offload` becomes `Offloada RAM`). The first message of a cut header (`| Model | Size | Off`) stays as plain text, since it isn't a table yet. If two cuts fall inside the same line (a message shorter than one line) the line isn't rebuilt
 - Messages with hex colors are re-rendered by the plugin (like messages with tables), so some details may differ slightly from Discord's native rendering. A word like `#bed` counts as a color (3-digit values only need one letter a–f)
 - Subtext (`-#`) is only recognized at the start of a line
 - The width and look of the plugin's code blocks are read from the original message, which is shown for an instant (no paint) to measure it. If Discord changes the ids `message-content-*` / `message-accessories-*`, the blocks fall back to a generic look

@@ -36,7 +36,7 @@ export function detectTable(text: string): boolean {
 }
 
 // Split a table row into cells, respecting escaped pipes
-function splitRow(line: string): string[] {
+export function splitRow(line: string): string[] {
     // Remove leading/trailing pipe and whitespace
     let trimmed = line.trim();
     if (trimmed.startsWith("|")) trimmed = trimmed.slice(1);
@@ -100,31 +100,31 @@ export function parseTable(lines: string[]): TableData | null {
     if (headerCells.length < 1 || sepCells.length < 1) return null;
     if (!isValidSeparator(sepCells)) return null;
 
-    // Header and separator must have same column count
-    // (be lenient: use the header count as canonical)
-    const colCount = headerCells.length;
-
-    const alignments = sepCells.map(parseAlignment);
-    // Pad alignments if separator has fewer columns
-    while (alignments.length < colCount) alignments.push("none");
-
-    const headers = headerCells.map((text, i) => ({
-        text,
-        align: alignments[i] ?? ("none" as const),
-    }));
-
-    const rows: string[][] = [];
+    const rawRows: string[][] = [];
     for (let i = 2; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line || !line.includes("|")) break;
-        const cells = splitRow(line);
-        // Normalize row to column count
-        const row: string[] = [];
-        for (let c = 0; c < colCount; c++) {
-            row.push(cells[c] ?? "");
-        }
-        rows.push(row);
+        rawRows.push(splitRow(line));
     }
+
+    // The table has as many columns as the widest of the header, the separator
+    // and the rows. Strictly, GFM ignores the cells of a row beyond the header,
+    // but that hides data whenever the header is cut or incomplete (typically a
+    // header split across two messages), so no cell is ever dropped: the columns
+    // without a header just get an empty one.
+    const colCount = Math.max(headerCells.length, sepCells.length, ...rawRows.map(r => r.length));
+
+    const alignments = sepCells.map(parseAlignment);
+    // Pad alignments if the separator has fewer columns
+    while (alignments.length < colCount) alignments.push("none");
+
+    const headers = Array.from({ length: colCount }, (_, i) => ({
+        text: headerCells[i] ?? "",
+        align: alignments[i] ?? ("none" as const),
+    }));
+
+    // Normalize every row to the column count (pad only, never cut)
+    const rows = rawRows.map(cells => Array.from({ length: colCount }, (_, c) => cells[c] ?? ""));
 
     // A header + separator with no rows is a valid (header-only) table: it's what
     // you get when a table is posted piece by piece and the rows come later
@@ -139,22 +139,17 @@ export function parseTable(lines: string[]): TableData | null {
 function parseHeaderlessTable(lines: string[]): TableData | null {
     if (lines.length < 1) return null;
 
-    const rows: string[][] = [];
-    let colCount = 0;
-
+    const rawRows: string[][] = [];
     for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) break;
-        const cells = splitRow(trimmed);
-        if (colCount === 0) colCount = cells.length;
-        const row: string[] = [];
-        for (let c = 0; c < colCount; c++) {
-            row.push(cells[c] ?? "");
-        }
-        rows.push(row);
+        rawRows.push(splitRow(trimmed));
     }
 
-    if (rows.length < 1 || colCount < 2) return null;
+    // As wide as the widest row: no cell is dropped
+    const colCount = Math.max(0, ...rawRows.map(r => r.length));
+    if (rawRows.length < 1 || colCount < 2) return null;
+    const rows = rawRows.map(cells => Array.from({ length: colCount }, (_, c) => cells[c] ?? ""));
 
     // No real headers — use empty headers so the component renders without a header row
     const headers = Array.from({ length: colCount }, () => ({

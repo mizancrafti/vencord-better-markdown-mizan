@@ -87,6 +87,37 @@
     margin-top: 4px;
 }
 
+/* ============================================================
+ * Inline formatting
+ * Discord only styles bold / italic / underline / strikethrough inside its own
+ * message markup, which the plugin's blocks are not part of: the parser output
+ * (<strong>, <em>, <u>, <s>) lost its styling, so the markers disappeared but
+ * the text looked the same.
+ * ============================================================ */
+.bm-enhanced-content strong {
+    font-weight: 700;
+}
+
+.bm-enhanced-content em {
+    font-style: italic;
+}
+
+.bm-enhanced-content u {
+    text-decoration: underline;
+}
+
+.bm-enhanced-content s,
+.bm-enhanced-content del {
+    text-decoration: line-through;
+}
+
+/* Headings are already bold, so **bold** inside them needs extra weight to be
+ * seen (the stroke thickens the glyphs even if the font has no heavier weight) */
+.bm-heading strong {
+    font-weight: 900;
+    -webkit-text-stroke: 0.035em currentColor;
+}
+
 .bm-heading-1 {
     font-size: 1.75em;
     padding-bottom: 4px;
