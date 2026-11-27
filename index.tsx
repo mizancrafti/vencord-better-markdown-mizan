@@ -125,7 +125,7 @@ export default definePlugin({
                 if (!needsRender) return null;
             }
 
-            return <EnhancedContent blocks={blocks} messageId={props.message.id} />;
+            return <EnhancedContent blocks={blocks} messageId={props.message.id} message={props.message} />;
         } catch (e) {
             console.error("[BetterMarkdown] Error enhancing content:", e);
             return null;

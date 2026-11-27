@@ -52,7 +52,7 @@ const PREVIEW_MARKDOWN = [
     "- [x] Checked task",
     "- [ ] Pending task",
     "",
-    "A footnote reference[^1], a color #FFA130 and",
+    "A footnote reference[^1], a [masked link](https://example.com), a color #FFA130 and",
     "-# a line of subtext",
     "",
     "[^1]: The footnote definition",

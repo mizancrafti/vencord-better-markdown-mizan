@@ -10,6 +10,8 @@
 import type { ParsedBlock } from "../parser";
 import { parseSubtext } from "../parser/heading";
 import { settings } from "../settings";
+import { React } from "@webpack/common";
+
 import { colorsToVars, type CustomColors, resolveColors, type ThemeName } from "../theme";
 import { Blockquote } from "./Blockquote";
 import { CodeBlock } from "./CodeBlock";
@@ -18,6 +20,7 @@ import { Heading, Subtext } from "./Heading";
 import { Hr } from "./Hr";
 import { MathBlock } from "./Math";
 import { MermaidBlock } from "./Mermaid";
+import { makeParseState, ParseProvider } from "./ParseContext";
 import { renderInline } from "./shared";
 import { Table } from "./Table";
 import { TaskList } from "./TaskList";
@@ -90,11 +93,16 @@ export function renderBlock(
     }
 }
 
-export function EnhancedContent({ blocks, messageId }: { blocks: ParsedBlock[]; messageId?: string; }) {
+/**
+ * `message` gives Discord's parser the channel and message the text belongs to, so role,
+ * user and channel mentions resolve and links render (see ParseContext.tsx).
+ */
+export function EnhancedContent({ blocks, messageId, message }: { blocks: ParsedBlock[]; messageId?: string; message?: any; }) {
     // Re-render when the theme or the custom colors change
     const s = settings.use(["theme", "customColors"]);
     const theme = (s.theme ?? "dark") as ThemeName;
     const colors = resolveColors(s.customColors);
+    const parseState = React.useMemo(() => makeParseState(message), [message?.id, message?.channel_id]);
 
     // Hide ONLY this message's own original content, by id. A global
     // ":has(.bm-enhanced-content) [id^=message-content-]" rule also hid the
@@ -109,7 +117,9 @@ export function EnhancedContent({ blocks, messageId }: { blocks: ParsedBlock[]; 
             data-bm-message-id={messageId}
         >
             {safeId && <style>{`#message-content-${safeId}{display:none}`}</style>}
-            {blocks.map((block, i) => renderBlock(block, i, theme, colors))}
+            <ParseProvider value={parseState}>
+                {blocks.map((block, i) => renderBlock(block, i, theme, colors))}
+            </ParseProvider>
         </div>
     );
 }

@@ -7,11 +7,12 @@
  */
 
 import { findByPropsLazy } from "@webpack";
-import { Parser } from "@webpack/common";
+import { Parser, React } from "@webpack/common";
 import { FootnoteRef } from "./Footnote";
 import { MathInline } from "./Math";
 import { decodeMathPlaceholder } from "../parser/math";
 import { swatchify } from "./ColorSwatch";
+import { type ParseState, useParseState } from "./ParseContext";
 
 // Color swatches next to hex colors (toggled from the plugin settings)
 let colorSwatchesEnabled = true;
@@ -25,11 +26,20 @@ const MarkdownParser = Parser ?? findByPropsLazy("parse", "defaultRules");
 
 /**
  * Render inline markdown content using Discord's own parser.
- * This preserves bold, italic, code, spoilers, emoji, mentions, etc.
+ * This preserves bold, italic, code, spoilers, emoji, mentions, links, etc.
  * Falls back to plain text if the parser isn't available.
+ *
+ * Returns a component (not the parsed nodes) so that it can read the state of
+ * the message it belongs to (see ParseContext.tsx): Discord's parser needs the
+ * channel to resolve role/user mentions and the permission to render links.
  */
 export function renderInline(text: string): React.ReactNode {
     if (!text) return null;
+    return <InlineText text={text} />;
+}
+
+function InlineText({ text }: { text: string; }) {
+    const state = useParseState();
 
     // Handle placeholder patterns: {{FN:index:id}} and {{MATH:encoded}}
     const placeholderPattern = /\{\{(?:FN:\d+:[^}]+|MATH:[^}]+)\}\}/;
@@ -44,7 +54,7 @@ export function renderInline(text: string): React.ReactNode {
             // Text before the marker
             if (match.index > lastIndex) {
                 const before = text.slice(lastIndex, match.index);
-                parts.push(parseInline(before));
+                parts.push(<React.Fragment key={`t-${lastIndex}`}>{parseInline(before, state)}</React.Fragment>);
             }
 
             if (match[1] === "FN") {
@@ -72,26 +82,26 @@ export function renderInline(text: string): React.ReactNode {
 
         // Remaining text after last marker
         if (lastIndex < text.length) {
-            parts.push(parseInline(text.slice(lastIndex)));
+            parts.push(<React.Fragment key={`t-${lastIndex}`}>{parseInline(text.slice(lastIndex), state)}</React.Fragment>);
         }
 
         return <>{parts}</>;
     }
 
-    return parseInline(text);
+    return <>{parseInline(text, state)}</>;
 }
 
 /**
  * Parse text with Discord's markdown parser.
- * Uses Vencord's standard Parser.parse(text, inline) API.
+ * Uses Vencord's standard Parser.parse(text, inline, state) API.
  * Falls back to plain text if the parser isn't available.
  */
-function parseInline(text: string): React.ReactNode {
+function parseInline(text: string, state: ParseState): React.ReactNode {
     if (!text) return null;
 
     try {
         if (MarkdownParser?.parse) {
-            const parsed = MarkdownParser.parse(text, true);
+            const parsed = MarkdownParser.parse(text, true, state);
             return colorSwatchesEnabled ? swatchify(parsed) : parsed;
         }
     } catch {
